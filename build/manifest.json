@@ -1,0 +1,42 @@
+{
+  "short_name": "TJ's Kebab",
+  "name": "TJ's Kebab Centre",
+  "description": "Order online from TJ's Kebab Centre, Bundoora. Delivery & Pickup available.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#E8410A",
+  "background_color": "#1A0E07",
+  "categories": ["food", "shopping"],
+  "shortcuts": [
+    {
+      "name": "Order Now",
+      "short_name": "Order",
+      "description": "Go straight to the menu",
+      "url": "/",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Manage your restaurant",
+      "url": "/admin",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand: #1A7A4A;
+  --brand-dark: #145E38;
+  --brand-light: #22A060;
+  --brand2: #E8410A;
+  --brand2-light: #FF5C2E;
+  --gold: #F59E0B;
+  --gold-light: #FCD34D;
+  --bg: #F8FAF8;
+  --bg2: #EFF5F0;
+  --surface: #FFFFFF;
+  --card: #FFFFFF;
+  --card2: #F3F7F4;
+  --border: rgba(26,122,74,0.12);
+  --border-hover: rgba(26,122,74,0.25);
+  --text: #1A2E1F;
+  --text2: #3D5944;
+  --muted: #7A9483;
+  --green: #1A7A4A;
+  --red: #E8410A;
+  --shadow: 0 2px 16px rgba(26,122,74,0.1);
+  --shadow-lg: 0 8px 32px rgba(26,122,74,0.15);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+button { cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; border: none; }
+input, select, textarea { font-family: 'Plus Jakarta Sans', sans-serif; }
+a { text-decoration: none; color: inherit; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 3px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes ripple { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.4); opacity: 0; } }
+
+.fade-up { animation: fadeUp 0.4s ease forwards; }
+.fade-in { animation: fadeIn 0.3s ease forwards; }
