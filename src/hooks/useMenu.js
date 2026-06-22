@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useMenu() {
@@ -12,10 +12,17 @@ export function useMenu() {
     // Simple query - no compound index needed
     const menuQ = query(collection(db, 'menuItems'));
     const unsubMenu = onSnapshot(menuQ, (snap) => {
-      const items = snap.docs
+      const all = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(item => item.available !== false)
         .sort((a, b) => (a.categoryOrder || 0) - (b.categoryOrder || 0) || (a.order || 0) - (b.order || 0));
+      const seen = new Set();
+      const items = all.filter(item => {
+        const key = `${item.category}__${item.name}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       setMenuItems(items);
       setLoading(false);
     }, (err) => {

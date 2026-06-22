@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const DELIVERY_STEPS = [
@@ -31,24 +30,19 @@ export default function OrderConfirmationPage() {
   const order = location.state;
   const [liveStatus, setLiveStatus] = useState('pending');
   const [notifGranted, setNotifGranted] = useState(false);
-  const [orderId, setOrderId] = useState(null);
-
   // Find the order in Firebase to get real-time updates
   useEffect(() => {
     if (!order?.orderRef) return;
-    const { query, collection, where, onSnapshot: snap } = require('firebase/firestore');
-    // Listen for the order by orderRef
+    let unsub;
     import('firebase/firestore').then(({ query, collection, where, onSnapshot }) => {
       const q = query(collection(db, 'orders'), where('orderRef', '==', order.orderRef));
-      const unsub = onSnapshot(q, snapshot => {
+      unsub = onSnapshot(q, snapshot => {
         if (!snapshot.empty) {
-          const orderDoc = snapshot.docs[0];
-          setOrderId(orderDoc.id);
-          setLiveStatus(orderDoc.data().status || 'pending');
+          setLiveStatus(snapshot.docs[0].data().status || 'pending');
         }
       });
-      return unsub;
     });
+    return () => { if (unsub) unsub(); };
   }, [order?.orderRef]);
 
   // Request notification permission

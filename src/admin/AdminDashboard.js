@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
 
-const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff'];
+const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code'];
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState(0);
@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddPromo, setShowAddPromo] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [qrUrl, setQrUrl] = useState('https://tjs-kebab-centre.netlify.app');
 
   useEffect(() => {
     const unsubs = [
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
     if (order?.fcmToken && STATUS_MESSAGES[status]) {
       const { title, body } = STATUS_MESSAGES[status];
       try {
-        const { addDoc, collection: col, serverTimestamp: st } = await import('firebase/firestore');
+        const { addDoc, collection: col } = await import('firebase/firestore');
         await addDoc(col(db, 'notifications'), { token: order.fcmToken, title, body, orderId: id, createdAt: new Date().toISOString() });
       } catch(e) { console.log('Notification error:', e); }
     }
@@ -211,6 +212,27 @@ export default function AdminDashboard() {
 
         {/* STAFF */}
         {tab === 5 && <StaffManagement />}
+
+        {/* QR CODE */}
+        {tab === 6 && (
+          <div style={{ maxWidth: 480, margin: '0 auto' }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>📱 Menu QR Code</h2>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 20 }}>Print this and place it on tables or the counter — customers scan to view your menu and order online.</p>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Website URL</label>
+              <input value={qrUrl} onChange={e => setQrUrl(e.target.value)} style={{ width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ background: '#fff', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, border: '1px solid var(--border)', marginBottom: 16 }}>
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(qrUrl)}`} alt="Menu QR Code" style={{ width: 280, height: 280, borderRadius: 8 }} />
+              <div style={{ fontWeight: 800, fontSize: 16, color: '#1A2E1F' }}>TJ's Kebab Centre</div>
+              <div style={{ fontSize: 12, color: '#7A9483' }}>Scan to view our menu & place an order online</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => window.print()} style={{ flex: 1, background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>🖨️ Print</button>
+              <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(qrUrl)}`} download="tjs-menu-qr.png" target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, textAlign: 'center', textDecoration: 'none' }}>⬇️ Download</a>
+            </div>
+          </div>
+        )}
 
         {/* DRINKS */}
         {tab === 4 && (
