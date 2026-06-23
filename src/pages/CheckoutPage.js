@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 const SHOP_LAT = -37.7063;
 const SHOP_LNG = 145.0456;
 const MAX_KM = 15;
-const GOOGLE_API_KEY = 'AIzaSyDCGA8NJQiZViGwxeIF3yYi9GA-j65WYNc';
+const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 
 function getDistanceKm(lat1, lng1, lat2, lng2) {
   const R = 6371;

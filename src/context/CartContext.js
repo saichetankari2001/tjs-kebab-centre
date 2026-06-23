@@ -8,26 +8,22 @@ export function CartProvider({ children }) {
 
   const addItem = (item) => {
     const baseId = item.baseId || item.id;
-    const hasCustomisations = item.customisations && (
-      item.customisations.salads?.length > 0 ||
-      item.customisations.sauces?.length > 0 ||
-      item.customisations.extras?.length > 0
-    );
+    const isSimple = !item.customisations ||
+      (!item.customisations.salads?.length &&
+       !item.customisations.sauces?.length &&
+       !item.customisations.extras?.length);
 
-    // For items without customisations (drinks, simple items), increment qty
-    if (!hasCustomisations) {
+    if (isSimple) {
       setCart(prev => {
-        const existing = prev.find(c => c.baseId === baseId && !c.customisations?.salads?.length && !c.customisations?.sauces?.length);
-        if (existing) {
-          return prev.map(c => c.cartId === existing.cartId ? { ...c, qty: c.qty + 1 } : c);
-        }
-        const cartId = baseId + '_' + Date.now();
-        return [...prev, { ...item, cartId, baseId, qty: 1 }];
+        const idx = prev.findIndex(c =>
+          (c.baseId === baseId || c.id === baseId) &&
+          (!c.customisations || (!c.customisations.salads?.length && !c.customisations.sauces?.length && !c.customisations.extras?.length))
+        );
+        if (idx !== -1) return prev.map((c,i) => i===idx ? {...c, qty:c.qty+1} : c);
+        return [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty:1}];
       });
     } else {
-      // For customised items, always add as new entry
-      const cartId = baseId + '_' + Date.now();
-      setCart(prev => [...prev, { ...item, cartId, baseId, qty: 1 }]);
+      setCart(prev => [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty:1}]);
     }
   };
 
@@ -36,18 +32,17 @@ export function CartProvider({ children }) {
       const item = prev.find(c => c.cartId === cartId);
       if (!item) return prev;
       if (item.qty <= 1) return prev.filter(c => c.cartId !== cartId);
-      return prev.map(c => c.cartId === cartId ? { ...c, qty: c.qty - 1 } : c);
+      return prev.map(c => c.cartId === cartId ? {...c, qty:c.qty-1} : c);
     });
   };
 
   const deleteItem = (cartId) => setCart(prev => prev.filter(c => c.cartId !== cartId));
   const clearCart = () => setCart([]);
-
-  const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
-  const itemCount = cart.reduce((s, c) => s + c.qty, 0);
+  const total = cart.reduce((s,c) => s+c.price*c.qty, 0);
+  const itemCount = cart.reduce((s,c) => s+c.qty, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addItem, removeItem, deleteItem, clearCart, total, itemCount, orderMode, setOrderMode }}>
+    <CartContext.Provider value={{cart, addItem, removeItem, deleteItem, clearCart, total, itemCount, orderMode, setOrderMode}}>
       {children}
     </CartContext.Provider>
   );
