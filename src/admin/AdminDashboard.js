@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
@@ -38,6 +38,28 @@ export default function AdminDashboard() {
       alert('✅ Database seeded successfully!');
     } catch (e) { alert('Error: ' + e.message); }
     setSeeding(false);
+  };
+
+  const cleanDuplicates = async () => {
+    if (!window.confirm('Delete all duplicate menu items and drinks from the database?')) return;
+    try {
+      let deleted = 0;
+      const menuSnap = await getDocs(collection(db, 'menuItems'));
+      const seenMenu = new Map();
+      for (const d of menuSnap.docs) {
+        const key = `${(d.data().category||'').trim().toLowerCase()}__${(d.data().name||'').trim().toLowerCase()}`;
+        if (seenMenu.has(key)) { await deleteDoc(doc(db, 'menuItems', d.id)); deleted++; }
+        else seenMenu.set(key, d.id);
+      }
+      const drinkSnap = await getDocs(collection(db, 'drinks'));
+      const seenDrinks = new Map();
+      for (const d of drinkSnap.docs) {
+        const key = (d.data().name || '').trim().toLowerCase();
+        if (seenDrinks.has(key)) { await deleteDoc(doc(db, 'drinks', d.id)); deleted++; }
+        else seenDrinks.set(key, d.id);
+      }
+      alert(`✅ Removed ${deleted} duplicate${deleted !== 1 ? 's' : ''}. Menu is now clean.`);
+    } catch (e) { alert('Error: ' + e.message); }
   };
 
   const STATUS_MESSAGES = {
@@ -105,6 +127,7 @@ export default function AdminDashboard() {
               {seeding ? '⏳ Seeding...' : '🌱 Seed Database'}
             </button>
           )}
+          <button onClick={cleanDuplicates} style={{ background: 'rgba(76,175,80,0.12)', border: '1px solid rgba(76,175,80,0.4)', color: 'var(--green)', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>🧹 Clean Duplicates</button>
           <button onClick={() => signOut(auth)} style={{ background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text2)', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>Sign Out</button>
         </div>
       </div>
