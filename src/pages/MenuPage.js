@@ -71,27 +71,32 @@ export default function MenuPage() {
           ))
         )}
 
+        {/* QR Code section */}
+        {!loading && (
+          <div style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Scan to view our menu</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Share this QR code with customers</div>
+            <div style={{ display: 'inline-block', background: '#fff', border: '1px solid var(--border)', borderRadius: 16, padding: 16, boxShadow: 'var(--shadow)' }}>
+              <img
+                src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(window.location.origin+'/menu')}&choe=UTF-8`}
+                alt="QR code for TJ's Kebab menu"
+                width={200}
+                height={200}
+                style={{ display: 'block', borderRadius: 8 }}
+              />
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 12 }}>{window.location.origin}/menu</p>
+          </div>
+        )}
+
         {/* Footer note */}
         {!loading && (
-          <div style={{
-            marginTop: 40, paddingTop: 20,
-            borderTop: '1px solid var(--border)',
-            textAlign: 'center',
-          }}>
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7 }}>
               Prices may vary. Menu is subject to change without notice.<br />
               All items are Halal certified.
             </p>
-            <a
-              href="/"
-              style={{
-                display: 'inline-block', marginTop: 16,
-                background: 'var(--brand)', color: '#fff',
-                padding: '12px 32px', borderRadius: 10,
-                fontWeight: 700, fontSize: 14,
-                boxShadow: '0 4px 12px rgba(26,122,74,0.3)',
-              }}
-            >
+            <a href="/" style={{ display:'inline-block', marginTop:16, background:'var(--brand)', color:'#fff', padding:'12px 32px', borderRadius:10, fontWeight:700, fontSize:14, boxShadow:'0 4px 12px rgba(26,122,74,0.3)' }}>
               Order Online →
             </a>
           </div>

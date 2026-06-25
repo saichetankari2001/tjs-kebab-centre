@@ -205,6 +205,44 @@ export default function OrderConfirmationPage() {
         </div>
       )}
 
+      {/* Loyalty stamp card */}
+      {order.stamps !== undefined && (
+        <div style={{ background:'linear-gradient(135deg,#1A7A4A,#22A060)', borderRadius:14, padding:'20px', marginBottom:20, color:'#fff' }}>
+          {order.freeReward ? (
+            <>
+              <div style={{ textAlign:'center', marginBottom:16 }}>
+                <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
+                <div style={{ fontSize:20, fontWeight:800, marginBottom:4 }}>You've earned a FREE meal!</div>
+                <div style={{ fontSize:13, opacity:0.85 }}>Free Kebab + Chips + Can of Drink on your next visit</div>
+              </div>
+              <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:10, padding:'12px 16px', textAlign:'center', fontSize:13, fontWeight:600 }}>
+                Show this to the staff at TJ's Kebab Centre to claim your reward
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+                <div>
+                  <div style={{ fontSize:14, fontWeight:700 }}>Your Loyalty Stamps</div>
+                  <div style={{ fontSize:11, opacity:0.75, marginTop:2 }}>5 stamps = Free Kebab + Chips + Drink</div>
+                </div>
+                <span style={{ fontSize:24 }}>🥙</span>
+              </div>
+              <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:12 }}>
+                {Array.from({ length:5 }).map((_,i)=>(
+                  <div key={i} style={{ width:44, height:44, borderRadius:'50%', background:i<order.stamps?'#FCD34D':'rgba(255,255,255,0.2)', border:`2px solid ${i<order.stamps?'#F59E0B':'rgba(255,255,255,0.3)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
+                    {i<order.stamps?'⭐':''}
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign:'center', fontSize:12, opacity:0.85 }}>
+                {5-order.stamps} more order{5-order.stamps!==1?'s':''} until a free meal!
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <button onClick={() => navigate('/')} style={{ width: '100%', background: '#fff', color: '#1A2E1F', border: '1px solid #E5E7EB', padding: '14px', borderRadius: 12, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         ORDER AGAIN
       </button>

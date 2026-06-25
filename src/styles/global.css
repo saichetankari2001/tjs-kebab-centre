@@ -50,3 +50,14 @@ a { text-decoration: none; color: inherit; }
 
 .fade-up { animation: fadeUp 0.4s ease forwards; }
 .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* Checkout two-column layout */
+.checkout-grid { grid-template-columns: 1fr !important; }
+.checkout-btn-mobile { display: block !important; }
+@media (min-width: 720px) {
+  .checkout-grid { grid-template-columns: minmax(0,1fr) 340px !important; }
+  .checkout-btn-mobile { display: none !important; }
+}
+
+/* Hide category nav scrollbar */
+::-webkit-scrollbar-width { width: 0; }
