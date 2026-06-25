@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import MenuPage from './pages/MenuPage';
 import AdminApp from './admin/AdminApp';
 import StaffPortal from './admin/staff/StaffPortal';
 import './styles/global.css';
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+          <Route path="/menu" element={<MenuPage />} />
         </Routes>
       </BrowserRouter>
     </CartProvider>

@@ -20,6 +20,14 @@ export default function Navbar() {
           <div style={{ fontSize: 10, color: 'var(--brand)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>Bundoora · Halal</div>
         </div>
       </div>
+      <button onClick={() => navigate('/menu')} style={{
+        background: 'transparent', color: 'var(--brand)',
+        border: '1px solid var(--border)',
+        padding: '8px 16px', borderRadius: 'var(--radius-sm)',
+        fontWeight: 700, fontSize: 13, transition: 'all 0.2s',
+      }}>
+        Menu
+      </button>
       <button onClick={() => navigate('/cart')} style={{
         background: itemCount > 0 ? 'var(--brand)' : 'var(--card2)',
         color: itemCount > 0 ? '#fff' : 'var(--text2)',
