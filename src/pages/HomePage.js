@@ -148,32 +148,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Order Mode ── */}
-      <div style={{ padding: '24px 20px 0' }}>
-        <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 10 }}>How would you like your order?</p>
-        <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 6, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, boxShadow: 'var(--shadow)' }}>
-          {[
-            { mode: 'delivery', icon: '🛵', title: 'Delivery', sub: 'After 5:30pm · 15km' },
-            { mode: 'pickup', icon: '🏪', title: 'Pickup', sub: '15–20 mins' },
-            { mode: 'dinein', icon: '🍽️', title: 'Dine In', sub: 'Eat here' },
-          ].map(opt => (
-            <button key={opt.mode} onClick={() => setOrderMode(opt.mode)} style={{
-              background: orderMode === opt.mode ? 'var(--brand)' : 'transparent',
-              border: `1px solid ${orderMode === opt.mode ? 'var(--brand)' : 'var(--border)'}`,
-              borderRadius: 10, padding: '12px 8px',
-              color: orderMode === opt.mode ? '#fff' : 'var(--text2)',
-              textAlign: 'center', transition: 'all 0.2s',
-              boxShadow: orderMode === opt.mode ? '0 4px 16px rgba(26,122,74,0.3)' : 'none',
-            }}>
-              <div style={{ fontSize: 22, marginBottom: 3 }}>{opt.icon}</div>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 1 }}>{opt.title}</div>
-              <div style={{ fontSize: 10, opacity: 0.8 }}>{opt.sub}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Menu ── */}
+      {/* ── Menu ── (shown first so customers can browse straight away) */}
       <div id="menu-section" style={{ paddingTop: 32 }}>
         <div style={{ padding: '0 20px 4px' }}>
           <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Our Menu</h2>
@@ -240,6 +215,31 @@ export default function HomePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── Order Mode ── */}
+      <div style={{ padding: '32px 20px 0' }}>
+        <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 10 }}>How would you like your order?</p>
+        <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 6, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, boxShadow: 'var(--shadow)' }}>
+          {[
+            { mode: 'delivery', icon: '🛵', title: 'Delivery', sub: 'After 5:30pm · 15km' },
+            { mode: 'pickup', icon: '🏪', title: 'Pickup', sub: '15–20 mins' },
+            { mode: 'dinein', icon: '🍽️', title: 'Dine In', sub: 'Eat here' },
+          ].map(opt => (
+            <button key={opt.mode} onClick={() => setOrderMode(opt.mode)} style={{
+              background: orderMode === opt.mode ? 'var(--brand)' : 'transparent',
+              border: `1px solid ${orderMode === opt.mode ? 'var(--brand)' : 'var(--border)'}`,
+              borderRadius: 10, padding: '12px 8px',
+              color: orderMode === opt.mode ? '#fff' : 'var(--text2)',
+              textAlign: 'center', transition: 'all 0.2s',
+              boxShadow: orderMode === opt.mode ? '0 4px 16px rgba(26,122,74,0.3)' : 'none',
+            }}>
+              <div style={{ fontSize: 22, marginBottom: 3 }}>{opt.icon}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 1 }}>{opt.title}</div>
+              <div style={{ fontSize: 10, opacity: 0.8 }}>{opt.sub}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Find Us ── */}

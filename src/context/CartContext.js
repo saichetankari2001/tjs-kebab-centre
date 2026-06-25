@@ -4,7 +4,7 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
-  const [orderMode, setOrderMode] = useState(null);
+  const [orderMode, setOrderMode] = useState('pickup');
 
   const addItem = (item) => {
     const baseId = item.baseId || item.id;

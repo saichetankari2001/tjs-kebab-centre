@@ -78,7 +78,7 @@ export default function MenuPage() {
             <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Share this QR code with customers</div>
             <div style={{ display: 'inline-block', background: '#fff', border: '1px solid var(--border)', borderRadius: 16, padding: 16, boxShadow: 'var(--shadow)' }}>
               <img
-                src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(window.location.origin+'/menu')}&choe=UTF-8`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin+'/menu')}&color=1A7A4A`}
                 alt="QR code for TJ's Kebab menu"
                 width={200}
                 height={200}
