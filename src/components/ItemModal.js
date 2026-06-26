@@ -14,6 +14,7 @@ const SAUCE_DISPLAY = [
   { id: 'sweet-chilli', name: 'Sweet Chilli', price: 1 },
   { id: 'bbq',          name: 'BBQ',          price: 1 },
   { id: 'tzaziki',      name: 'Tzaziki',      price: 1 },
+  { id: 'chipotle',     name: 'Chipotle',     price: 1 },
 ];
 
 const SIZE_OPTIONS = ['S', 'M', 'L', 'XL'];
@@ -74,7 +75,7 @@ export default function ItemModal({ item, isOpen, onClose }) {
     const sauceName = id => SAUCE_DISPLAY.find(s => s.id === id)?.name ?? id;
     const saladName = id => SALAD_OPTIONS.find(s => s.id === id)?.name ?? id;
 
-    addItem({
+    const cartItem = {
       ...item,
       baseId: item.id,
       price: unitPrice,
@@ -86,8 +87,11 @@ export default function ItemModal({ item, isOpen, onClose }) {
         salads: config.hasSalad ? selectedSalads.map(saladName) : [],
         note: specialNote.trim().slice(0, 500) || null,
       },
-      qty,
-    });
+    };
+
+    for (let i = 0; i < qty; i++) {
+      addItem(cartItem);
+    }
     onClose();
   };
 
@@ -210,7 +214,7 @@ export default function ItemModal({ item, isOpen, onClose }) {
 
             {/* Sauces */}
             {config.hasSauces && (
-              <Section title="Sauces" note="First sauce is free · Garlic & Chilli +$3 · Others +$1">
+              <Section title="Sauces" note="Garlic & Chilli +$3 · All others +$1">
                 <div className="flex flex-wrap gap-2">
                   {SAUCE_DISPLAY.map(sauce => {
                     const active = selectedSauces.includes(sauce.id);

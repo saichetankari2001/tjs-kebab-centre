@@ -4,7 +4,7 @@ export const ITEM_TYPE_CONFIG = {
   hsp:         { hasSize: true,  hasMeat: true,  hasSauces: true,  hasSalad: true  },
   ricebowl:    { hasSize: false, hasMeat: true,  hasSauces: true,  hasSalad: true  },
   salad:       { hasSize: false, hasMeat: true,  hasSauces: true,  hasSalad: true  },
-  chargrilled: { hasSize: false, hasMeat: false, hasSauces: false, hasSalad: false },
+  chargrilled: { hasSize: false, hasMeat: true, hasSauces: true, hasSalad: true },
   skewer:      { hasSize: false, hasMeat: false, hasSauces: false, hasSalad: false },
   snack:       { hasSize: true,  hasMeat: false, hasSauces: false, hasSalad: false },
   drink:       { hasSize: false, hasMeat: false, hasSauces: false, hasSalad: false },
@@ -22,7 +22,7 @@ export const CHIPS_SIZE_PRICES = {
 
 export const SAUCE_PRICES = {
   garlic: 3, chilli: 3,
-  mayo: 1, 'tomato-sauce': 1, 'sweet-chilli': 1, bbq: 1, tzaziki: 1,
+  mayo: 1, 'tomato-sauce': 1, 'sweet-chilli': 1, bbq: 1, tzaziki: 1, chipotle: 1,
 };
 
 export const EXTRA_MEAT_PRICE = 2;
