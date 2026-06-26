@@ -1,45 +1,74 @@
 import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
-import CustomiseModal from './CustomiseModal';
+import ItemModal from './ItemModal';
 
-export default function MenuItemCard({ item, category }) {
-  const { cart, removeItem } = useCart();
-  const [showModal, setShowModal] = useState(false);
-  const qty = cart.filter(c => c.baseId === item.id).reduce((s,c)=>s+c.qty,0);
-  const hasCustom = category?.hasSalad || category?.hasSauce || category?.hasExtras;
+export default function MenuItemCard({ item }) {
+  const { cart } = useCart();
+  const [modalOpen, setModalOpen] = useState(false);
+  const qty = cart.filter(c => c.baseId === item.id).reduce((s, c) => s + c.qty, 0);
 
   return (
     <>
-      <div onClick={() => hasCustom && setShowModal(true)} style={{
-        background: '#fff', border: `1.5px solid ${qty > 0 ? 'var(--brand)' : 'var(--border)'}`,
-        borderRadius: 'var(--radius)', padding: '14px 16px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
-        transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-        cursor: hasCustom ? 'pointer' : 'default',
-        boxShadow: qty > 0 ? '0 4px 16px rgba(26,122,74,0.15)' : 'var(--shadow)',
-      }}>
-        {item.popular && (
-          <div style={{ position: 'absolute', top: 0, right: 0, background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: '#92400E', fontSize: 9, fontWeight: 800, padding: '3px 12px', borderBottomLeftRadius: 8, letterSpacing: 1 }}>★ POPULAR</div>
+      <div
+        onClick={() => setModalOpen(true)}
+        className={cn(
+          'relative bg-[#1C1C1E] rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group',
+          'border hover:border-amber-500/40 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30',
+          qty > 0 ? 'border-amber-500/60' : 'border-[#2A2A2A]'
         )}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4, paddingRight: item.popular ? 60 : 0 }}>{item.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 8 }}>{item.description}</div>
-          {hasCustom && <div style={{ fontSize: 11, color: 'var(--brand)', fontWeight: 600, marginBottom: 6 }}>✏️ Tap to customise</div>}
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand)' }}>${item.price.toFixed(2)}</div>
-        </div>
-        <div onClick={e => e.stopPropagation()} style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-          {qty === 0 ? (
-            <button onClick={() => setShowModal(true)} style={{ background: 'var(--brand)', color: '#fff', border: 'none', width: 36, height: 36, borderRadius: 10, fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 12px rgba(26,122,74,0.3)' }}>+</button>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button onClick={() => { const last = cart.filter(c=>c.baseId===item.id).slice(-1)[0]; if(last) removeItem(last.cartId); }} style={{ background: 'var(--card2)', color: 'var(--text)', border: '1px solid var(--border)', width: 32, height: 32, borderRadius: 8, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-              <span style={{ fontSize: 16, fontWeight: 700, minWidth: 20, textAlign: 'center', color: 'var(--brand)' }}>{qty}</span>
-              <button onClick={() => setShowModal(true)} style={{ background: 'var(--brand)', color: '#fff', border: 'none', width: 32, height: 32, borderRadius: 8, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-            </div>
+      >
+        {/* Food photo */}
+        {item.image ? (
+          <div className="w-full aspect-video overflow-hidden">
+            <img
+              src={item.image}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        ) : (
+          <div className="w-full aspect-video bg-[#2A2A2A] flex items-center justify-center">
+            <span className="text-4xl opacity-30">🥙</span>
+          </div>
+        )}
+
+        {/* Popular badge */}
+        {item.popular && (
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-500 rounded-full text-[10px] font-bold text-[#111111] tracking-wide">
+            ★ POPULAR
+          </div>
+        )}
+
+        {/* Qty badge */}
+        {qty > 0 && (
+          <div className="absolute top-2 right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-xs font-bold text-[#111111]">
+            {qty}
+          </div>
+        )}
+
+        {/* Card body */}
+        <div className="p-4">
+          <h3 className="text-white font-semibold text-sm leading-snug mb-1">{item.name}</h3>
+          {item.description && (
+            <p className="text-[#9CA3AF] text-xs leading-relaxed line-clamp-2 mb-3">
+              {item.description}
+            </p>
           )}
+          <div className="flex items-center justify-between">
+            <span className="text-amber-500 font-bold text-base">${item.price.toFixed(2)}</span>
+            <div className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+              qty > 0 ? 'bg-amber-500' : 'bg-[#2A2A2A] group-hover:bg-amber-500/20'
+            )}>
+              <Plus size={16} className={qty > 0 ? 'text-[#111111]' : 'text-amber-500'} />
+            </div>
+          </div>
         </div>
       </div>
-      {showModal && <CustomiseModal item={item} category={category} onClose={() => setShowModal(false)} />}
+
+      <ItemModal item={item} isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
 }
