@@ -20,10 +20,10 @@ export function CartProvider({ children }) {
           (!c.customisations || (!c.customisations.salads?.length && !c.customisations.sauces?.length && !c.customisations.extras?.length))
         );
         if (idx !== -1) return prev.map((c,i) => i===idx ? {...c, qty:c.qty+1} : c);
-        return [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty:1}];
+        return [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty: item.qty ?? 1}];
       });
     } else {
-      setCart(prev => [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty:1}]);
+      setCart(prev => [...prev, {...item, cartId:baseId+'_'+Date.now(), baseId, qty: item.qty ?? 1}]);
     }
   };
 

@@ -4,7 +4,7 @@ import { X, Plus, Minus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
 import { getItemTypeConfig, calculateItemPrice, HSP_SIZE_PRICES, CHIPS_SIZE_PRICES } from '../lib/itemTypes';
-import { SALAD_OPTIONS, SAUCE_OPTIONS, EXTRA_MEAT_OPTIONS } from '../data/options';
+import { SALAD_OPTIONS, EXTRA_MEAT_OPTIONS } from '../data/options';
 
 const SAUCE_DISPLAY = [
   { id: 'garlic',       name: 'Garlic',       price: 3, popular: true },
@@ -13,7 +13,7 @@ const SAUCE_DISPLAY = [
   { id: 'tomato-sauce', name: 'Tomato',       price: 1 },
   { id: 'sweet-chilli', name: 'Sweet Chilli', price: 1 },
   { id: 'bbq',          name: 'BBQ',          price: 1 },
-  { id: 'tzaziki',      name: 'Chipotle',     price: 1 },
+  { id: 'tzaziki',      name: 'Tzaziki',      price: 1 },
 ];
 
 const SIZE_OPTIONS = ['S', 'M', 'L', 'XL'];
@@ -96,8 +96,7 @@ export default function ItemModal({ item, isOpen, onClose }) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm animate-fadeIn" />
         <Dialog.Content
-          className="fixed bottom-0 left-0 right-0 z-[101] bg-[#1C1C1E] rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slideUp focus:outline-none"
-          style={{ maxWidth: 640, margin: '0 auto' }}
+          className="fixed bottom-0 left-0 right-0 z-[101] bg-[#1C1C1E] rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slideUp focus:outline-none max-w-[640px] mx-auto"
         >
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-1">
