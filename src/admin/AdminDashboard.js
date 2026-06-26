@@ -95,6 +95,48 @@ export default function AdminDashboard() {
     await updateDoc(doc(db, 'promotions', id), { active: !active });
   };
 
+  // One-time migration: assigns itemType to all menuItems based on category name
+  const assignItemTypes = async () => {
+    if (!window.confirm('This will assign itemType to all menu items based on their category. Continue?')) return;
+    const { collection: col, getDocs: gd, updateDoc: upd, doc: d } = await import('firebase/firestore');
+    const snap = await gd(col(db, 'menuItems'));
+
+    const categoryToItemType = {
+      'wraps': 'wrap',
+      'wrap': 'wrap',
+      'hsp': 'hsp',
+      'halal snack pack': 'hsp',
+      'rice bowls': 'ricebowl',
+      'rice bowl': 'ricebowl',
+      'salad bowls': 'salad',
+      'salad bowl': 'salad',
+      'bowl salad': 'salad',
+      'skewers': 'skewer',
+      'skewer': 'skewer',
+      'chargrilled': 'chargrilled',
+      'snacks': 'snack',
+      'chips': 'snack',
+      'drinks': 'drink',
+      'drink': 'drink',
+    };
+
+    const isChipsItem = (name) => name?.toLowerCase().includes('chip');
+
+    let updated = 0;
+    for (const doc_ of snap.docs) {
+      const data = doc_.data();
+      const cat = (data.category || data.categoryName || '').toLowerCase();
+      const name = (data.name || '').toLowerCase();
+      const itemType = categoryToItemType[cat] ?? 'wrap';
+      await upd(d(db, 'menuItems', doc_.id), {
+        itemType,
+        isChips: isChipsItem(name),
+      });
+      updated++;
+    }
+    alert(`Updated ${updated} items with itemType.`);
+  };
+
   const todaysOrders = orders.filter(o => {
     if (!o.createdAt) return false;
     const d = o.createdAt.toDate?.() || new Date(o.createdAt);
@@ -128,6 +170,7 @@ export default function AdminDashboard() {
             </button>
           )}
           <button onClick={cleanDuplicates} style={{ background: 'rgba(76,175,80,0.12)', border: '1px solid rgba(76,175,80,0.4)', color: 'var(--green)', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>🧹 Clean Duplicates</button>
+          <button onClick={assignItemTypes} style={{ background: '#F59E0B', color: '#111', padding: '7px 14px', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>🏷️ Set Item Types</button>
           <button onClick={() => signOut(auth)} style={{ background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text2)', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>Sign Out</button>
         </div>
       </div>
