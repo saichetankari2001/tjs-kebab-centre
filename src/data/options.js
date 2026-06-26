@@ -19,3 +19,8 @@ export const SAUCE_OPTIONS = [
 export const EXTRAS_OPTIONS = [
   { id: "cheese", name: "Cheese", price: 1 },
 ];
+
+export const EXTRA_MEAT_OPTIONS = [
+  { id: 'lamb', name: 'Extra Lamb', price: 2 },
+  { id: 'chicken', name: 'Extra Chicken', price: 2 },
+];
