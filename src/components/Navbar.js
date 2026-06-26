@@ -8,8 +8,8 @@ export default function Navbar() {
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 999,
-      background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)',
-      borderBottom: '1px solid var(--border)',
+      background: '#111111', backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid #2A2A2A',
       padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64,
       boxShadow: '0 2px 12px rgba(26,122,74,0.08)',
     }}>
