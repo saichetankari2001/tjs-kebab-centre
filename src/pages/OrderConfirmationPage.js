@@ -1,275 +1,248 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const DELIVERY_STEPS = [
-  { id: 'pending', icon: '✅', label: 'Order Confirmed', sub: 'Your order has been received' },
-  { id: 'preparing', icon: '👨‍🍳', label: 'Preparing Your Food', sub: 'Our chefs are working on it' },
-  { id: 'ready', icon: '🥙', label: 'Order Ready', sub: 'Your food is freshly prepared' },
-  { id: 'picked', icon: '🛵', label: 'Out for Delivery', sub: 'Driver is on the way to you' },
-  { id: 'delivered', icon: '🎉', label: 'Delivered!', sub: 'Enjoy your meal!' },
+const STATUS_STEPS = [
+  { key: 'pending',   label: 'Order Placed', icon: '✓'   },
+  { key: 'preparing', label: 'Preparing',    icon: '👨‍🍳' },
+  { key: 'ready',     label: 'Ready for Pickup', icon: '📦' },
 ];
 
-const PICKUP_STEPS = [
-  { id: 'pending', icon: '✅', label: 'Order Confirmed', sub: 'Your order has been received' },
-  { id: 'preparing', icon: '👨‍🍳', label: 'Preparing Your Food', sub: 'Our chefs are working on it' },
-  { id: 'ready', icon: '🏪', label: 'Ready for Pickup!', sub: 'Come collect your order now' },
-];
-
-const DINEIN_STEPS = [
-  { id: 'pending', icon: '✅', label: 'Order Confirmed', sub: 'Your order has been received' },
-  { id: 'preparing', icon: '👨‍🍳', label: 'Being Prepared', sub: 'Our chefs are working on it' },
-  { id: 'ready', icon: '🍽️', label: 'Ready to Serve!', sub: 'Your food is coming to your table' },
-];
-
-const STATUS_ORDER = ['pending', 'preparing', 'ready', 'picked', 'delivered'];
+const STATUS_ORDER = ['pending', 'preparing', 'ready'];
 
 export default function OrderConfirmationPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { orderId } = useParams();
-  const order = location.state;
-  const [liveStatus, setLiveStatus] = useState('pending');
-  const [notifGranted, setNotifGranted] = useState(false);
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { orderId: paramOrderId } = useParams();
 
-  // Subscribe to real-time order status updates
-  // Supports both legacy orderRef (string) and new Firestore doc orderId
+  const stateOrderId    = location.state?.orderId;
+  const customerName    = location.state?.customerName;
+  const total           = location.state?.total;
+  const legacyOrderRef  = location.state?.orderRef;
+
+  const orderId = paramOrderId || stateOrderId;
+
+  const [status, setStatus]     = useState('pending');
+  const [order,  setOrder]      = useState(null);
+
+  // Real-time listener on Firestore order doc
   useEffect(() => {
-    let unsub;
-    const firestoreOrderId = orderId || order?.orderId;
-    const legacyOrderRef   = order?.orderRef;
-
-    import('firebase/firestore').then(({ query, collection, where, onSnapshot, doc, onSnapshot: onDocSnapshot }) => {
-      if (firestoreOrderId) {
-        // New path: direct doc lookup by Firestore document ID
-        import('firebase/firestore').then(({ doc: firestoreDoc, onSnapshot: snap }) => {
-          const ref = firestoreDoc(db, 'orders', firestoreOrderId);
-          unsub = snap(ref, (snapshot) => {
-            if (snapshot.exists()) {
-              setLiveStatus(snapshot.data().status || 'pending');
-            }
-          });
-        });
-      } else if (legacyOrderRef) {
-        // Legacy path: query by orderRef field
-        const q = query(collection(db, 'orders'), where('orderRef', '==', legacyOrderRef));
-        unsub = onSnapshot(q, (snapshot) => {
-          if (!snapshot.empty) {
-            setLiveStatus(snapshot.docs[0].data().status || 'pending');
-          }
-        });
+    if (!orderId) return;
+    const ref  = doc(db, 'orders', orderId);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setStatus(data.status ?? 'pending');
+        setOrder(data);
       }
     });
-    return () => { if (unsub) unsub(); };
-  }, [orderId, order?.orderRef, order?.orderId]);
+    return unsub;
+  }, [orderId]);
 
-  // Request notification permission
-  const requestNotifications = async () => {
-    if (!('Notification' in window)) {
-      alert('Your browser does not support notifications');
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      setNotifGranted(true);
-      // Show a test notification
-      new Notification("TJ's Kebab Centre 🥙", {
-        body: `Order #${order?.orderRef} confirmed! We'll notify you of updates.`,
-        icon: '/icon-192.png',
-      });
-    }
-  };
+  const currentStep = STATUS_ORDER.indexOf(status);
 
-  // Allow page to render when arrived via /order-confirmation/:orderId (no full state)
-  if (!order && !orderId) { navigate('/'); return null; }
+  // Fallback: no orderId means we can't show anything useful
+  if (!orderId && !legacyOrderRef) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <button
+          onClick={() => navigate('/')}
+          className="text-brand font-bold underline"
+        >
+          Back to Menu
+        </button>
+      </div>
+    );
+  }
 
-  const isDelivery = order?.orderMode === 'delivery';
-  const isDineIn = order?.orderMode === 'dinein';
-  const steps = isDelivery ? DELIVERY_STEPS : isDineIn ? DINEIN_STEPS : PICKUP_STEPS;
-  const currentStepIndex = STATUS_ORDER.indexOf(liveStatus);
-  const isComplete = liveStatus === 'delivered' || (liveStatus === 'ready' && !isDelivery);
+  // Use Firestore items if available, otherwise fall back to location.state.items
+  const items     = order?.items  ?? location.state?.items  ?? [];
+  const orderTotal = order?.total ?? total;
+  const displayName = customerName || order?.customerName || order?.customer?.firstName;
 
-  const getStepIndex = (stepId) => STATUS_ORDER.indexOf(stepId);
+  // Short display ID: last 6 chars of Firestore doc id
+  const shortId = orderId
+    ? orderId.slice(-6).toUpperCase()
+    : legacyOrderRef?.toString().toUpperCase() ?? '——';
+
+  // Loyalty stamp placeholder — Plan 2 will wire up real logic
+  // For now we display "Order 1 of 5 for your FREE kebab!"
+  const stampCount = order?.stamps ?? 1;
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px', background: '#F8FAF8', minHeight: '100vh' }}>
+    <div className="min-h-screen bg-surface flex flex-col items-center px-4 py-10 gap-7 text-center animate-fadeIn">
 
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ fontSize: 60, marginBottom: 12, animation: isComplete ? 'bounce 1s ease 3' : 'none' }}>
-          {isComplete ? '🎉' : '🥙'}
-        </div>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: isComplete ? '#1A7A4A' : '#1A2E1F', marginBottom: 6 }}>
-          {isComplete ? (isDelivery ? 'Delivered!' : 'Ready!') : 'Order Placed!'}
+      {/* Kebab icon */}
+      <div className="w-24 h-24 rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-5xl animate-slideUp">
+        🥙
+      </div>
+
+      {/* Heading */}
+      <div className="space-y-1.5 animate-slideUp">
+        <h1 className="font-display text-5xl text-white tracking-wider">
+          ORDER PLACED!
         </h1>
-        <p style={{ color: '#7A9483', fontSize: 15 }}>
-          Order <span style={{ fontWeight: 800, color: '#E8410A', fontFamily: 'monospace' }}>#{order?.orderRef || orderId}</span>
+        <p className="text-muted text-sm">
+          {displayName ? `Thanks ${displayName}!` : 'Thank you!'}{' '}
+          We'll have it ready for pickup soon.
         </p>
-        {order?.orderType === 'preorder' && (
-          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '8px 16px', display: 'inline-block', marginTop: 8, fontSize: 13, color: '#1A7A4A', fontWeight: 600 }}>
-            📅 Scheduled: {order?.scheduledFor}
+        <p className="text-muted text-xs font-mono">Order #{shortId}</p>
+      </div>
+
+      {/* ── Status Tracker ── */}
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5 animate-slideUp">
+        <p className="text-[10px] font-black text-muted tracking-widest uppercase mb-5">
+          Order Status
+        </p>
+
+        <div className="flex items-center justify-between">
+          {STATUS_STEPS.map((step, idx) => {
+            const done    = idx <= currentStep;
+            const current = idx === currentStep;
+
+            return (
+              <React.Fragment key={step.key}>
+                {/* Step dot + label */}
+                <div className="flex flex-col items-center gap-1.5 min-w-0">
+                  <div
+                    className={[
+                      'w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-500',
+                      done
+                        ? 'bg-brand border-brand text-surface'
+                        : 'bg-card2 border-border text-muted',
+                      current
+                        ? 'ring-2 ring-brand/30 ring-offset-2 ring-offset-card'
+                        : '',
+                    ].join(' ')}
+                  >
+                    {step.icon}
+                  </div>
+                  <span
+                    className={[
+                      'text-[9px] font-bold leading-tight px-0.5',
+                      done ? 'text-brand' : 'text-muted',
+                    ].join(' ')}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+
+                {/* Connector line */}
+                {idx < STATUS_STEPS.length - 1 && (
+                  <div className="flex-1 h-0.5 mx-2 bg-border rounded overflow-hidden">
+                    <div
+                      className={[
+                        'h-full bg-brand rounded transition-all duration-700',
+                        idx < currentStep ? 'w-full' : 'w-0',
+                      ].join(' ')}
+                    />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Live pill */}
+        {status !== 'ready' && (
+          <div className="mt-4 flex justify-center">
+            <span className="bg-brand/10 text-brand border border-brand/30 rounded-full text-[10px] font-black px-3 py-0.5 tracking-widest uppercase">
+              ● Live
+            </span>
           </div>
         )}
       </div>
 
-      {/* Notification Permission Banner */}
-      {!notifGranted && (
-        <div style={{ background: 'linear-gradient(135deg, #1A7A4A, #22A060)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 32 }}>🔔</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', marginBottom: 4 }}>Get order updates!</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>Allow notifications to track your order like Uber Eats</div>
-          </div>
-          <button
-            onClick={requestNotifications}
-            style={{ background: '#fff', color: '#1A7A4A', border: 'none', padding: '10px 16px', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
-          >
-            Allow 🔔
-          </button>
-        </div>
-      )}
-
-      {notifGranted && (
-        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1A7A4A', fontWeight: 600 }}>
-          ✅ Notifications enabled — you'll be updated every step of the way!
-        </div>
-      )}
-
-      {/* Live Tracking */}
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '20px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800 }}>
-            {isDelivery ? '🛵 Live Delivery Tracking' : '📍 Order Status'}
-          </h2>
-          {!isComplete && (
-            <span style={{ background: '#FEF3C7', color: '#D97706', border: '1px solid #FCD34D', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '3px 10px', animation: 'pulse 2s infinite' }}>
-              ● LIVE
+      {/* ── Order Summary ── */}
+      {(items.length > 0 || orderTotal != null) && (
+        <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5 text-left animate-slideUp">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-black text-muted tracking-widest uppercase">
+              Your Order
+            </p>
+            <span className="bg-brand/10 text-brand border border-brand/20 rounded-full text-[10px] font-black px-2.5 py-0.5 tracking-widest uppercase">
+              Pickup
             </span>
+          </div>
+
+          {items.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {items.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between text-sm"
+                >
+                  <span className="text-white">
+                    {item.displayName ?? item.name}
+                    {item.qty > 1 && (
+                      <span className="text-muted ml-1">×{item.qty}</span>
+                    )}
+                  </span>
+                  <span className="text-muted tabular-nums">
+                    ${(item.price * item.qty).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {orderTotal != null && (
+            <div className="border-t border-border pt-3 flex justify-between items-center">
+              <span className="text-muted text-xs font-bold uppercase tracking-wider">
+                Total
+              </span>
+              <span className="text-brand font-black text-2xl">
+                ${orderTotal.toFixed(2)}
+              </span>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Progress bar */}
-        <div style={{ height: 6, background: '#E5E7EB', borderRadius: 3, marginBottom: 24, overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: 'linear-gradient(90deg, #1A7A4A, #22A060)', borderRadius: 3, width: `${(currentStepIndex / (steps.length - 1)) * 100}%`, transition: 'width 0.8s ease' }} />
+      {/* ── Loyalty Stamp Counter ── */}
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5 animate-slideUp">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-black text-muted tracking-widest uppercase">
+            Loyalty Rewards
+          </p>
+          <span className="text-2xl">⭐</span>
         </div>
 
-        {/* Steps */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {steps.map((step, idx) => {
-            const stepStatusIndex = getStepIndex(step.id);
-            const isDone = stepStatusIndex < currentStepIndex || (stepStatusIndex === currentStepIndex && isComplete);
-            const isActive = stepStatusIndex === currentStepIndex && !isComplete;
-            const isPending = stepStatusIndex > currentStepIndex;
-            return (
-              <div key={step.id} style={{ display: 'flex', gap: 14, paddingBottom: idx < steps.length - 1 ? 20 : 0, position: 'relative' }}>
-                {idx < steps.length - 1 && (
-                  <div style={{ position: 'absolute', left: 19, top: 40, width: 2, height: 'calc(100% - 20px)', background: isDone ? '#1A7A4A' : '#E5E7EB', transition: 'background 0.5s' }} />
-                )}
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  background: isDone ? '#1A7A4A' : isActive ? '#F0FDF4' : '#F8FAF8',
-                  border: `2px solid ${isDone ? '#1A7A4A' : isActive ? '#1A7A4A' : '#E5E7EB'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, transition: 'all 0.5s',
-                  animation: isActive ? 'pulse 2s ease infinite' : 'none',
-                  color: isDone ? '#fff' : 'inherit',
-                }}>
-                  {isDone ? '✓' : step.icon}
-                </div>
-                <div style={{ paddingTop: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: isPending ? '#9CA3AF' : '#1A2E1F', transition: 'color 0.3s' }}>{step.label}</div>
-                  <div style={{ fontSize: 12, color: '#7A9483', marginTop: 2 }}>{step.sub}</div>
-                  {isActive && isDelivery && step.id === 'picked' && (
-                    <div style={{ marginTop: 12, background: '#F8FAF8', borderRadius: 10, padding: '12px 14px', border: '1px solid #E5E7EB' }}>
-                      <div style={{ fontSize: 12, color: '#7A9483', marginBottom: 8 }}>Driver location</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ animation: 'trackMove 1.5s ease-in-out infinite', display: 'inline-block', fontSize: 20 }}>🛵</span>
-                        <div style={{ flex: 1, height: 4, background: '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: '60%', background: '#1A7A4A', borderRadius: 2, animation: 'progress 3s ease-in-out infinite' }} />
-                        </div>
-                        <span style={{ fontSize: 14 }}>📍</span>
-                      </div>
-                      <p style={{ fontSize: 11, color: '#7A9483', marginTop: 8 }}>Estimated arrival: <strong style={{ color: '#1A2E1F' }}>15–25 minutes</strong></p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Order Details */}
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '20px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>Order Details</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {order?.items?.map(item => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#3D5944' }}>
-              <span>{item.displayName || item.name} × {item.qty}</span>
-              <span>${(item.price * item.qty).toFixed(2)}</span>
+        {/* Stamp grid */}
+        <div className="flex gap-2 justify-center mb-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className={[
+                'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg transition-all duration-300',
+                i < stampCount
+                  ? 'bg-brand border-brand text-surface animate-stamp'
+                  : 'bg-card2 border-border text-muted/30',
+              ].join(' ')}
+            >
+              {i < stampCount ? '🥙' : ''}
             </div>
           ))}
-          <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 800, color: '#1A7A4A' }}>
-            <span>TOTAL</span><span>${order?.total?.toFixed(2)}</span>
-          </div>
         </div>
-        <div style={{ marginTop: 14, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0', fontSize: 13, color: '#1A7A4A', fontWeight: 600 }}>
-          💳 Payment via Card — Secure & Encrypted
-        </div>
+
+        <p className="text-white text-sm font-bold text-center">
+          Order {stampCount} of 5 for your{' '}
+          <span className="text-brand">FREE kebab!</span>
+        </p>
+        <p className="text-muted text-xs text-center mt-1">
+          {5 - stampCount} more order{5 - stampCount !== 1 ? 's' : ''} until a free meal
+        </p>
       </div>
 
-      {isDelivery && order?.address && (
-        <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400E' }}>
-          📍 Delivering to: <strong>{order.address}</strong>
-        </div>
-      )}
-
-      {/* Loyalty stamp card */}
-      {order?.stamps !== undefined && (
-        <div style={{ background:'linear-gradient(135deg,#1A7A4A,#22A060)', borderRadius:14, padding:'20px', marginBottom:20, color:'#fff' }}>
-          {order?.freeReward ? (
-            <>
-              <div style={{ textAlign:'center', marginBottom:16 }}>
-                <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
-                <div style={{ fontSize:20, fontWeight:800, marginBottom:4 }}>You've earned a FREE meal!</div>
-                <div style={{ fontSize:13, opacity:0.85 }}>Free Kebab + Chips + Can of Drink on your next visit</div>
-              </div>
-              <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:10, padding:'12px 16px', textAlign:'center', fontSize:13, fontWeight:600 }}>
-                Show this to the staff at TJ's Kebab Centre to claim your reward
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-                <div>
-                  <div style={{ fontSize:14, fontWeight:700 }}>Your Loyalty Stamps</div>
-                  <div style={{ fontSize:11, opacity:0.75, marginTop:2 }}>5 stamps = Free Kebab + Chips + Drink</div>
-                </div>
-                <span style={{ fontSize:24 }}>🥙</span>
-              </div>
-              <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:12 }}>
-                {Array.from({ length:5 }).map((_,i)=>(
-                  <div key={i} style={{ width:44, height:44, borderRadius:'50%', background:i<order?.stamps?'#FCD34D':'rgba(255,255,255,0.2)', border:`2px solid ${i<order?.stamps?'#F59E0B':'rgba(255,255,255,0.3)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
-                    {i<order?.stamps?'⭐':''}
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign:'center', fontSize:12, opacity:0.85 }}>
-                {5-(order?.stamps||0)} more order{5-(order?.stamps||0)!==1?'s':''} until a free meal!
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      <button onClick={() => navigate('/')} style={{ width: '100%', background: '#fff', color: '#1A2E1F', border: '1px solid #E5E7EB', padding: '14px', borderRadius: 12, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        ORDER AGAIN
+      {/* ── Back to Menu ── */}
+      <button
+        onClick={() => navigate('/')}
+        className="w-full max-w-sm bg-brand text-surface font-black text-sm py-4 rounded-xl hover:bg-brand-lit transition-colors active:scale-95 shadow shadow-brand/20 animate-slideUp"
+      >
+        BACK TO MENU
       </button>
 
-      <style>{`
-        @keyframes trackMove { 0% { transform: translateX(0); } 50% { transform: translateX(30px); } 100% { transform: translateX(0); } }
-        @keyframes progress { 0% { width: 20%; } 50% { width: 70%; } 100% { width: 20%; } }
-      `}</style>
     </div>
   );
 }
