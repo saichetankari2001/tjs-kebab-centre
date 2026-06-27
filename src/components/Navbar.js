@@ -1,47 +1,48 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ShoppingBag } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 
 export default function Navbar() {
-  const { itemCount, total } = useCart();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
+
   return (
-    <nav style={{
-      position: 'sticky', top: 0, zIndex: 999,
-      background: '#111111', backdropFilter: 'blur(16px)',
-      borderBottom: '1px solid #2A2A2A',
-      padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64,
-      boxShadow: '0 2px 12px rgba(26,122,74,0.08)',
-    }}>
-      <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg, var(--brand), var(--brand-light))', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', boxShadow: '0 3px 12px rgba(26,122,74,0.3)' }}>TJ</div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>TJ's Kebab</div>
-          <div style={{ fontSize: 10, color: 'var(--brand)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>Bundoora · Halal</div>
-        </div>
+    <motion.header
+      initial={{ y: -10, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="sticky top-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-5 md:px-8"
+    >
+      {/* Logo */}
+      <button
+        onClick={() => navigate('/')}
+        className="flex items-center gap-2 focus:outline-none"
+      >
+        <span className="font-display text-2xl tracking-wide text-white leading-none">
+          TJ'S <span className="text-brand">KEBAB</span>
+        </span>
+        <span className="hidden sm:block text-[10px] text-muted tracking-widest uppercase mt-0.5 font-medium">
+          Centre
+        </span>
+      </button>
+
+      {/* Right actions */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/cart')}
+          className="relative flex items-center gap-2 bg-brand text-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-lit transition-colors active:scale-95"
+        >
+          <ShoppingBag size={16} strokeWidth={2.5} />
+          <span className="hidden sm:inline">Order</span>
+          {itemCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-white text-surface text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+              {itemCount > 9 ? '9+' : itemCount}
+            </span>
+          )}
+        </button>
       </div>
-      <button onClick={() => navigate('/menu')} style={{
-        background: 'transparent', color: 'var(--brand)',
-        border: '1px solid var(--border)',
-        padding: '8px 16px', borderRadius: 'var(--radius-sm)',
-        fontWeight: 700, fontSize: 13, transition: 'all 0.2s',
-      }}>
-        Menu
-      </button>
-      <button onClick={() => navigate('/cart')} style={{
-        background: itemCount > 0 ? 'var(--brand)' : 'var(--card2)',
-        color: itemCount > 0 ? '#fff' : 'var(--text2)',
-        border: `1px solid ${itemCount > 0 ? 'var(--brand)' : 'var(--border)'}`,
-        padding: '9px 18px', borderRadius: 'var(--radius-sm)',
-        fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
-        transition: 'all 0.2s',
-        boxShadow: itemCount > 0 ? '0 3px 16px rgba(26,122,74,0.3)' : 'none',
-      }}>
-        🛒
-        {itemCount > 0 ? (
-          <><span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 6, padding: '1px 8px', fontSize: 12 }}>{itemCount}</span><span>${total.toFixed(2)}</span></>
-        ) : <span>Cart</span>}
-      </button>
-    </nav>
+    </motion.header>
   );
 }
