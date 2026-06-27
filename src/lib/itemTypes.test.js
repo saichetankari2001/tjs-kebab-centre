@@ -9,12 +9,13 @@ describe('getItemTypeConfig', () => {
     expect(config.hasSalad).toBe(true);
   });
 
-  test('returns correct config for skewer (no customisation)', () => {
+  test('returns correct config for skewer (has sauces + skew base)', () => {
     const config = getItemTypeConfig('skewer');
     expect(config.hasSize).toBe(false);
     expect(config.hasMeat).toBe(false);
-    expect(config.hasSauces).toBe(false);
+    expect(config.hasSauces).toBe(true);
     expect(config.hasSalad).toBe(false);
+    expect(config.hasSkewBase).toBe(true);
   });
 
   test('returns no-customisation fallback for unknown type', () => {
@@ -36,51 +37,88 @@ describe('calculateItemPrice', () => {
     })).toBe(14);
   });
 
-  test('wrap with garlic sauce adds $3', () => {
+  test('wrap with one sauce is free (first sauce always free)', () => {
     expect(calculateItemPrice(12, {
       itemType: 'wrap', selectedSize: null, hasExtraMeat: false, selectedSauces: ['garlic'],
-    })).toBe(15);
-  });
-
-  test('wrap with mayo adds $1', () => {
-    expect(calculateItemPrice(12, {
-      itemType: 'wrap', selectedSize: null, hasExtraMeat: false, selectedSauces: ['mayo'],
-    })).toBe(13);
-  });
-
-  test('wrap with garlic + chilli + extra meat = base + 3 + 3 + 2', () => {
-    expect(calculateItemPrice(12, {
-      itemType: 'wrap', selectedSize: null, hasExtraMeat: true, selectedSauces: ['garlic', 'chilli'],
-    })).toBe(20);
-  });
-
-  test('hsp medium adds $2 to base', () => {
-    expect(calculateItemPrice(10, {
-      itemType: 'hsp', selectedSize: 'M', hasExtraMeat: false, selectedSauces: [],
     })).toBe(12);
   });
 
-  test('hsp xl adds $6 to base', () => {
-    expect(calculateItemPrice(10, {
-      itemType: 'hsp', selectedSize: 'XL', hasExtraMeat: false, selectedSauces: [],
+  test('wrap with two sauces charges $2 for the second', () => {
+    expect(calculateItemPrice(12, {
+      itemType: 'wrap', selectedSize: null, hasExtraMeat: false, selectedSauces: ['garlic', 'chilli'],
+    })).toBe(14);
+  });
+
+  test('wrap with three sauces charges $4 (two paid sauces)', () => {
+    expect(calculateItemPrice(12, {
+      itemType: 'wrap', selectedSize: null, hasExtraMeat: false, selectedSauces: ['garlic', 'chilli', 'mayo'],
     })).toBe(16);
   });
 
+  test('wrap with two sauces + extra meat = base + 2 (sauce) + 2 (meat)', () => {
+    expect(calculateItemPrice(12, {
+      itemType: 'wrap', selectedSize: null, hasExtraMeat: true, selectedSauces: ['garlic', 'chilli'],
+    })).toBe(16);
+  });
+
+  test('hsp small uses sizePrices absolute value', () => {
+    const item = { sizePrices: { S: 15, M: 20, L: 24, XL: 35 } };
+    expect(calculateItemPrice(15, {
+      itemType: 'hsp', item, selectedSize: 'S', hasExtraMeat: false, selectedSauces: [],
+    })).toBe(15);
+  });
+
+  test('hsp medium uses sizePrices absolute value', () => {
+    const item = { sizePrices: { S: 15, M: 20, L: 24, XL: 35 } };
+    expect(calculateItemPrice(15, {
+      itemType: 'hsp', item, selectedSize: 'M', hasExtraMeat: false, selectedSauces: [],
+    })).toBe(20);
+  });
+
+  test('hsp xl uses sizePrices absolute value', () => {
+    const item = { sizePrices: { S: 15, M: 20, L: 24, XL: 35 } };
+    expect(calculateItemPrice(15, {
+      itemType: 'hsp', item, selectedSize: 'XL', hasExtraMeat: false, selectedSauces: [],
+    })).toBe(35);
+  });
+
   test('chips small returns $5', () => {
+    const item = { sizePrices: { S: 5, M: 7, L: 9, XL: 12 } };
     expect(calculateItemPrice(5, {
-      itemType: 'snack', selectedSize: 'S', hasExtraMeat: false, selectedSauces: [], isChips: true,
+      itemType: 'chips', item, selectedSize: 'S', hasExtraMeat: false, selectedSauces: [],
     })).toBe(5);
   });
 
   test('chips large returns $9', () => {
+    const item = { sizePrices: { S: 5, M: 7, L: 9, XL: 12 } };
     expect(calculateItemPrice(5, {
-      itemType: 'snack', selectedSize: 'L', hasExtraMeat: false, selectedSauces: [], isChips: true,
+      itemType: 'chips', item, selectedSize: 'L', hasExtraMeat: false, selectedSauces: [],
     })).toBe(9);
   });
 
-  test('skewer has no extras regardless of options passed', () => {
+  test('bowl salad type uses saladPrice', () => {
+    const item = { saladPrice: 15, ricePrice: 16 };
+    expect(calculateItemPrice(15, {
+      itemType: 'bowl', item, bowlType: 'salad', hasExtraMeat: false, selectedSauces: [],
+    })).toBe(15);
+  });
+
+  test('bowl rice type uses ricePrice', () => {
+    const item = { saladPrice: 15, ricePrice: 16 };
+    expect(calculateItemPrice(15, {
+      itemType: 'bowl', item, bowlType: 'rice', hasExtraMeat: false, selectedSauces: [],
+    })).toBe(16);
+  });
+
+  test('skewer returns base price with no extras', () => {
     expect(calculateItemPrice(10, {
       itemType: 'skewer', selectedSize: null, hasExtraMeat: false, selectedSauces: [],
+    })).toBe(10);
+  });
+
+  test('skewer with one sauce is free', () => {
+    expect(calculateItemPrice(10, {
+      itemType: 'skewer', selectedSize: null, hasExtraMeat: false, selectedSauces: ['garlic'],
     })).toBe(10);
   });
 });
