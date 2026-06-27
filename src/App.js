@@ -7,6 +7,10 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import MenuPage from './pages/MenuPage';
+import MenuCardPage from './pages/MenuCardPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import AccountPage from './pages/AccountPage';
 import AdminApp from './admin/AdminApp';
 import StaffPortal from './admin/staff/StaffPortal';
 import './styles/global.css';
@@ -27,6 +31,10 @@ export default function App() {
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
           <Route path="/menu" element={<MenuPage />} />
+          <Route path="/menu-card" element={<MenuCardPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Routes>
       </BrowserRouter>
     </CartProvider>
