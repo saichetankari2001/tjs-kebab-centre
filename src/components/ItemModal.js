@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, Plus, Minus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
-import { getItemTypeConfig, calculateItemPrice, HSP_SIZE_PRICES, CHIPS_SIZE_PRICES } from '../lib/itemTypes';
+import { getItemTypeConfig, calculateItemPrice, CHIPS_SIZE_PRICES } from '../lib/itemTypes';
 import { SALAD_OPTIONS, EXTRA_MEAT_OPTIONS } from '../data/options';
 
 const SAUCE_DISPLAY = [
@@ -146,9 +146,10 @@ export default function ItemModal({ item, isOpen, onClose }) {
               <Section title="Size">
                 <div className="grid grid-cols-4 gap-2">
                   {SIZE_OPTIONS.map(size => {
+                    const sizePrice = item?.sizePrices?.[size] ?? 0;
                     const extraCost = item.isChips
                       ? null
-                      : (HSP_SIZE_PRICES[size] > 0 ? `+$${HSP_SIZE_PRICES[size]}` : 'Base');
+                      : (sizePrice > 0 ? `$${sizePrice}` : 'Base');
                     return (
                       <button
                         key={size}

@@ -53,9 +53,9 @@ export const SEED_MENU_V2 = [
 ];
 
 export const SEED_DRINKS_V2 = [
-  { name: 'Can',            description: '375ml soft drink can.',    price: 3, order: 1, available: true },
-  { name: 'Regular Bottle', description: '600ml bottle.',            price: 5, order: 2, available: true },
-  { name: 'Large Bottle',   description: '1.25L bottle.',            price: 7, order: 3, available: true },
+  { name: 'Can',            description: '375ml soft drink can.',    price: 3, order: 1, available: true, itemType: 'drink' },
+  { name: 'Regular Bottle', description: '600ml bottle.',            price: 5, order: 2, available: true, itemType: 'drink' },
+  { name: 'Large Bottle',   description: '1.25L bottle.',            price: 7, order: 3, available: true, itemType: 'drink' },
 ];
 
 // Keep old exports as aliases so AdminDashboard doesn't break until Plan 4 updates it
