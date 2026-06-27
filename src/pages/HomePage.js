@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMenu } from '../hooks/useMenu';
 import HeroSection from '../components/HeroSection';
+import PromoSignupBanner from '../components/PromoSignupBanner';
 import CategoryNav from '../components/CategoryNav';
 import MenuGrid from '../components/MenuGrid';
 import CartBar from '../components/CartBar';
@@ -63,6 +64,8 @@ export default function HomePage() {
 
   return (
     <div className="bg-[#111111] min-h-screen">
+      <PromoSignupBanner />
+
       {/* Promotions banner (if any) */}
       {promotions.length > 0 && (
         <div className="px-4 pt-4 space-y-2">
