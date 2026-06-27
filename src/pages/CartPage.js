@@ -1,125 +1,264 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Plus, Minus, Trash2, Tag } from 'lucide-react';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { useCart } from '../context/CartContext';
 
 export default function CartPage() {
-  const { cart, addItem, removeItem, deleteItem, total, itemCount, orderMode } = useCart();
+  const { cart, addItem, removeItem, deleteItem, total, itemCount } = useCart();
   const navigate = useNavigate();
-  const deliveryFee = orderMode === 'delivery' ? 5 : 0;
-  const grandTotal = total + deliveryFee;
-
   const [drinks, setDrinks] = useState([]);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState('');
 
   useEffect(() => {
-    const fetchDrinks = async () => {
-      try {
-        const snap = await getDocs(collection(db, 'drinks'));
-        const list = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(d => d.available !== false)
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-        setDrinks(list);
-      } catch (err) {
-        console.error('Failed to fetch drinks:', err);
-      }
-    };
-    fetchDrinks();
+    getDocs(query(collection(db, 'drinks'), orderBy('order')))
+      .then((snap) =>
+        setDrinks(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((d) => d.available !== false)
+        )
+      )
+      .catch(() => {});
   }, []);
+
+  const handlePromo = () => setPromoError('Invalid or expired promo code.');
 
   if (itemCount === 0) {
     return (
-      <div style={{ textAlign:'center', padding:'80px 20px', background:'#F8FAF8', minHeight:'100vh' }}>
-        <div style={{ fontSize:64, marginBottom:20 }}>🥙</div>
-        <h2 style={{ fontSize:28, fontWeight:800, marginBottom:10 }}>Your cart is empty</h2>
-        <p style={{ color:'#7A9483', marginBottom:28 }}>Add some delicious items from our menu!</p>
-        <button onClick={()=>navigate('/')} style={{ background:'#1A7A4A', color:'#fff', border:'none', padding:'14px 32px', borderRadius:12, fontSize:17, fontWeight:700, cursor:'pointer' }}>BROWSE MENU</button>
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <span className="text-6xl">🥙</span>
+        <h2 className="font-display text-4xl text-white tracking-wide">Your order is empty</h2>
+        <p className="text-muted text-sm">Add some delicious items from our menu!</p>
+        <button
+          onClick={() => navigate('/')}
+          className="mt-2 bg-brand text-surface font-black text-sm px-8 py-3 rounded-xl hover:bg-brand-lit transition-colors"
+        >
+          BROWSE MENU
+        </button>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth:600, margin:'0 auto', padding:'24px 20px', background:'#F8FAF8', minHeight:'100vh' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
-        <button onClick={()=>navigate('/')} style={{ background:'#fff', border:'1px solid #E5E7EB', color:'#3D5944', padding:'8px 14px', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer' }}>← Back</button>
-        <h1 style={{ fontSize:26, fontWeight:800 }}>Your Order</h1>
-      </div>
-
-      <div style={{ background:orderMode==='delivery'?'rgba(232,65,10,0.06)':orderMode==='dinein'?'rgba(245,166,35,0.06)':'rgba(26,122,74,0.06)', border:`1px solid ${orderMode==='delivery'?'rgba(232,65,10,0.2)':orderMode==='dinein'?'rgba(245,166,35,0.2)':'rgba(26,122,74,0.2)'}`, borderRadius:10, padding:'12px 16px', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
-        <span style={{ fontSize:18 }}>{orderMode==='delivery'?'🛵':orderMode==='dinein'?'🍽️':'🏪'}</span>
-        <span style={{ fontSize:14, fontWeight:600, color:orderMode==='delivery'?'#E8410A':orderMode==='dinein'?'#B45309':'#1A7A4A' }}>
-          {orderMode==='delivery'?'Delivery — After 5:30pm, within 15km':orderMode==='dinein'?'Dine In':'Pickup — Ready in 15–20 minutes'}
+    <div className="min-h-screen bg-surface pb-32">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-border flex items-center gap-3 px-4 h-14">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-8 h-8 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white transition-colors"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <span className="font-bold text-white text-base flex-1">Your Order</span>
+        <span className="text-muted text-sm">
+          {itemCount} item{itemCount !== 1 ? 's' : ''}
         </span>
-        <button onClick={()=>navigate('/')} style={{ marginLeft:'auto', background:'none', border:'none', color:'#7A9483', fontSize:12, fontWeight:600, cursor:'pointer' }}>Change</button>
       </div>
 
-      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
-        {cart.map(item => (
-          <div key={item.cartId} style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:12, padding:'14px 16px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontWeight:700, fontSize:15, marginBottom:2 }}>{item.displayName||item.name}</div>
-                {item.customisations?.salads?.length>0&&<div style={{ fontSize:11, color:'#7A9483', marginTop:2 }}>🥗 {item.customisations.salads.join(', ')}</div>}
-                {item.customisations?.sauces?.length>0&&<div style={{ fontSize:11, color:'#7A9483', marginTop:2 }}>🫙 {item.customisations.sauces.join(', ')}</div>}
-                {item.customisations?.extras?.length>0&&<div style={{ fontSize:11, color:'#1A7A4A', marginTop:2 }}>➕ {item.customisations.extras.join(', ')}</div>}
-                <div style={{ fontSize:13, color:'#1A7A4A', fontWeight:700, marginTop:4 }}>${item.price.toFixed(2)} each</div>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-                <button onClick={()=>removeItem(item.cartId)} style={{ background:'#F3F7F4', color:'#1A2E1F', border:'1px solid #E5E7EB', width:32, height:32, borderRadius:8, fontSize:18, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>−</button>
-                <span style={{ fontWeight:700, fontSize:16, minWidth:20, textAlign:'center', color:'#1A7A4A' }}>{item.qty}</span>
-                <button onClick={()=>addItem({...item, id:item.baseId||item.id})} style={{ background:'#1A7A4A', color:'#fff', border:'none', width:32, height:32, borderRadius:8, fontSize:18, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>+</button>
-                <div style={{ fontWeight:700, fontSize:15, color:'#F59E0B', minWidth:52, textAlign:'right' }}>${(item.price*item.qty).toFixed(2)}</div>
-                <button onClick={()=>deleteItem(item.cartId)} style={{ background:'none', border:'none', color:'#9CA3AF', fontSize:18, padding:4, cursor:'pointer' }}>✕</button>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Pickup notice */}
+      <div className="mx-4 mt-4 bg-brand/10 border border-brand/20 rounded-xl px-4 py-3 flex items-center gap-3">
+        <span className="text-xl">🏃</span>
+        <div>
+          <p className="text-white font-semibold text-sm">
+            PICKUP ONLY
+          </p>
+          <p className="text-muted text-xs">
+            Come grab your order from our store — no delivery.
+          </p>
+        </div>
       </div>
 
-      <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:12, padding:'16px', marginBottom:24 }}>
-        <h3 style={{ fontSize:17, fontWeight:800, color:'#E8410A', marginBottom:4 }}>🥤 Add a Drink?</h3>
-        <p style={{ fontSize:12, color:'#7A9483', marginBottom:14 }}>Complete your meal with a cold drink</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:8 }}>
-          {drinks.map(drink => {
-            const drinkInCart = cart.find(c =>
-              (c.baseId === drink.id || c.id === drink.id) &&
-              (!c.customisations || (!c.customisations.salads?.length && !c.customisations.sauces?.length))
-            );
-            const qty = drinkInCart ? drinkInCart.qty : 0;
-            return (
-              <div key={drink.id} style={{ background:qty>0?'rgba(26,122,74,0.06)':'#F8FAF8', border:`1px solid ${qty>0?'#1A7A4A':'#E5E7EB'}`, borderRadius:10, padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:600, color:'#1A2E1F', marginBottom:2 }}>{drink.name}</div>
-                  <div style={{ fontSize:12, color:'#1A7A4A', fontWeight:700 }}>${drink.price.toFixed(2)}</div>
-                </div>
-                {qty === 0 ? (
-                  <button onClick={()=>addItem({...drink})} style={{ background:'#1A7A4A', color:'#fff', border:'none', width:28, height:28, borderRadius:6, fontSize:18, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>+</button>
-                ) : (
-                  <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                    <button onClick={()=>removeItem(drinkInCart.cartId)} style={{ background:'#F3F7F4', color:'#1A2E1F', border:'1px solid #E5E7EB', width:24, height:24, borderRadius:4, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>−</button>
-                    <span style={{ fontWeight:700, fontSize:14, color:'#1A7A4A', minWidth:16, textAlign:'center' }}>{qty}</span>
-                    <button onClick={()=>addItem({...drink})} style={{ background:'#1A7A4A', color:'#fff', border:'none', width:24, height:24, borderRadius:4, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>+</button>
-                  </div>
+      {/* Cart items */}
+      <div className="mx-4 mt-4 bg-card border border-border rounded-xl overflow-hidden">
+        <AnimatePresence initial={false}>
+          {cart.map((item, idx) => (
+            <motion.div
+              key={item.cartId ?? idx}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm truncate">
+                  {item.displayName ?? item.name}
+                </p>
+                {item.customisations && (
+                  <p className="text-muted text-xs mt-0.5 leading-snug line-clamp-2">
+                    {[
+                      item.customisations.bowlType,
+                      item.customisations.skewBase,
+                      item.customisations.size && `Size: ${item.customisations.size}`,
+                      item.customisations.extraMeat && `+${item.customisations.extraMeat}`,
+                      item.customisations.sauces?.length &&
+                        `Sauces: ${item.customisations.sauces.join(', ')}`,
+                      item.customisations.salads?.length &&
+                        `Salad: ${item.customisations.salads.join(', ')}`,
+                      item.customisations.extras?.length &&
+                        `Extras: ${item.customisations.extras.join(', ')}`,
+                      item.customisations.note,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
                 )}
+                <p className="text-brand font-bold text-sm mt-1">
+                  ${(item.price * item.qty).toFixed(2)}
+                </p>
               </div>
-            );
-          })}
+
+              {/* Qty controls */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => removeItem(item.cartId)}
+                  className="w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white hover:bg-brand transition-colors"
+                >
+                  <Minus size={12} />
+                </button>
+                <span className="text-white font-bold text-sm w-5 text-center">
+                  {item.qty}
+                </span>
+                <button
+                  onClick={() => addItem({ ...item, id: item.baseId || item.id })}
+                  className="w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white hover:bg-brand transition-colors"
+                >
+                  <Plus size={12} />
+                </button>
+                <button
+                  onClick={() => deleteItem(item.cartId)}
+                  className="w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors ml-1"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Drinks upsell */}
+      {drinks.length > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="text-muted text-xs font-bold tracking-wider uppercase mb-2 px-1">
+            Add a drink?
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {drinks.map((drink) => {
+              const drinkInCart = cart.find(
+                (c) =>
+                  (c.baseId === drink.id || c.id === drink.id) &&
+                  (!c.customisations ||
+                    (!c.customisations.salads?.length &&
+                      !c.customisations.sauces?.length))
+              );
+              const qty = drinkInCart ? drinkInCart.qty : 0;
+              return (
+                <div
+                  key={drink.id}
+                  className={`flex-shrink-0 bg-card border rounded-xl px-4 py-3 flex flex-col gap-1 ${
+                    qty > 0 ? 'border-brand/40' : 'border-border'
+                  }`}
+                >
+                  <p className="text-white text-sm font-semibold whitespace-nowrap">
+                    {drink.name}
+                  </p>
+                  <p className="text-brand text-xs font-bold">
+                    ${drink.price.toFixed(2)}
+                  </p>
+                  {qty === 0 ? (
+                    <button
+                      onClick={() => addItem({ ...drink })}
+                      className="mt-1 w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white hover:bg-brand transition-colors"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2">
+                      <button
+                        onClick={() => removeItem(drinkInCart.cartId)}
+                        className="w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white hover:bg-brand transition-colors"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="text-white font-bold text-sm w-5 text-center">
+                        {qty}
+                      </span>
+                      <button
+                        onClick={() => addItem({ ...drink })}
+                        className="w-7 h-7 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white hover:bg-brand transition-colors"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Promo code */}
+      <div className="mx-4 mt-4">
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2.5">
+            <Tag size={14} className="text-muted flex-shrink-0" />
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => {
+                setPromoCode(e.target.value.toUpperCase());
+                setPromoError('');
+              }}
+              placeholder="Promo code"
+              className="flex-1 bg-transparent text-white text-sm placeholder:text-muted outline-none"
+            />
+          </div>
+          <button
+            onClick={handlePromo}
+            className="bg-card border border-border text-muted text-sm font-semibold px-4 rounded-xl hover:border-brand/40 hover:text-white transition-colors"
+          >
+            Apply
+          </button>
+        </div>
+        {promoError && (
+          <p className="text-red-400 text-xs mt-1 px-1">{promoError}</p>
+        )}
+      </div>
+
+      {/* Order summary */}
+      <div className="mx-4 mt-4 bg-card border border-border rounded-xl overflow-hidden">
+        <div className="flex justify-between px-4 py-3 border-b border-border text-sm">
+          <span className="text-muted">
+            Subtotal ({itemCount} item{itemCount !== 1 ? 's' : ''})
+          </span>
+          <span className="text-white font-semibold">${total.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between px-4 py-3 border-b border-border text-sm">
+          <span className="text-muted">Pickup</span>
+          <span className="text-green-400 font-semibold">Free</span>
+        </div>
+        <div className="flex justify-between px-4 py-4 text-base font-black">
+          <span className="text-white">Total</span>
+          <span className="text-brand">${total.toFixed(2)}</span>
         </div>
       </div>
 
-      <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:12, padding:'16px', marginBottom:24 }}>
-        <h3 style={{ fontSize:18, fontWeight:800, marginBottom:14 }}>Order Summary</h3>
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'#3D5944' }}><span>Subtotal ({itemCount} item{itemCount>1?'s':''})</span><span>${total.toFixed(2)}</span></div>
-          {orderMode==='delivery'&&<div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'#3D5944' }}><span>Delivery fee</span><span>$5.00</span></div>}
-          <div style={{ display:'flex', justifyContent:'space-between', fontSize:20, fontWeight:800, color:'#1A7A4A', paddingTop:10, borderTop:'1px solid #E5E7EB' }}><span>TOTAL</span><span>${grandTotal.toFixed(2)}</span></div>
-        </div>
+      {/* CTA */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-5 pt-3 bg-surface/95 backdrop-blur border-t border-border">
+        <button
+          onClick={() => navigate('/checkout')}
+          className="w-full bg-brand text-surface font-black text-sm py-4 rounded-xl flex items-center justify-between px-6 hover:bg-brand-lit transition-colors active:scale-[0.98] shadow shadow-brand/20"
+        >
+          <span>Proceed to Checkout</span>
+          <span>${total.toFixed(2)} →</span>
+        </button>
       </div>
-
-      <button onClick={()=>navigate('/checkout')} style={{ width:'100%', background:'#1A7A4A', color:'#fff', border:'none', padding:'16px', borderRadius:12, fontSize:19, fontWeight:800, boxShadow:'0 6px 24px rgba(26,122,74,0.4)', cursor:'pointer' }}>
-        PROCEED TO CHECKOUT — ${grandTotal.toFixed(2)}
-      </button>
     </div>
   );
 }
