@@ -1,45 +1,43 @@
-import React, { useRef, useEffect } from 'react';
-import { cn } from '../lib/utils';
+import React, { useEffect, useRef } from 'react';
 
 export default function CategoryNav({ categories, activeCatId, onCategoryClick }) {
-  const navRef = useRef(null);
+  const scrollRef = useRef(null);
+  const pillRefs  = useRef({});
 
-  // Auto-scroll active pill into view
+  // Auto-scroll active pill into view when activeCatId changes
   useEffect(() => {
-    if (!navRef.current || !activeCatId) return;
-    const btn = navRef.current.querySelector(`[data-cat="${activeCatId}"]`);
-    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    const pill = pillRefs.current[activeCatId];
+    const bar  = scrollRef.current;
+    if (!pill || !bar) return;
+    const pillLeft = pill.offsetLeft;
+    const barW     = bar.offsetWidth;
+    const pillW    = pill.offsetWidth;
+    bar.scrollTo({ left: pillLeft - barW / 2 + pillW / 2, behavior: 'smooth' });
   }, [activeCatId]);
 
   return (
-    <div
-      ref={navRef}
-      className="sticky top-0 z-50 bg-[#111111] border-b border-[#2A2A2A]"
+    <nav
+      ref={scrollRef}
+      className="sticky top-16 z-40 bg-surface/95 backdrop-blur border-b border-border flex items-center gap-1 overflow-x-auto scrollbar-hide px-3 h-12"
     >
-      <div
-        className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {categories.map(cat => {
-          const isActive = cat.id === activeCatId;
-          return (
-            <button
-              key={cat.id}
-              data-cat={cat.id}
-              onClick={() => onCategoryClick(cat.id)}
-              className={cn(
-                'flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap',
-                isActive
-                  ? 'bg-amber-500 text-[#111111]'
-                  : 'bg-transparent border border-[#3A3A3A] text-white hover:border-amber-500/50 hover:text-amber-400'
-              )}
-            >
-              {cat.emoji && <span className="mr-1.5">{cat.emoji}</span>}
-              {cat.name}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+      {categories.map((cat) => {
+        const active = cat.id === activeCatId;
+        return (
+          <button
+            key={cat.id}
+            ref={(el) => { pillRefs.current[cat.id] = el; }}
+            onClick={() => onCategoryClick(cat.id)}
+            className={[
+              'flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all whitespace-nowrap',
+              active
+                ? 'bg-brand text-surface shadow shadow-brand/30'
+                : 'text-muted hover:text-white hover:bg-card2',
+            ].join(' ')}
+          >
+            {cat.emoji} {cat.name}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
