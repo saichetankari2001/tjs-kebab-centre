@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { db } from '../firebase';
 
 const DELIVERY_STEPS = [
@@ -27,23 +27,41 @@ const STATUS_ORDER = ['pending', 'preparing', 'ready', 'picked', 'delivered'];
 export default function OrderConfirmationPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { orderId } = useParams();
   const order = location.state;
   const [liveStatus, setLiveStatus] = useState('pending');
   const [notifGranted, setNotifGranted] = useState(false);
-  // Find the order in Firebase to get real-time updates
+
+  // Subscribe to real-time order status updates
+  // Supports both legacy orderRef (string) and new Firestore doc orderId
   useEffect(() => {
-    if (!order?.orderRef) return;
     let unsub;
-    import('firebase/firestore').then(({ query, collection, where, onSnapshot }) => {
-      const q = query(collection(db, 'orders'), where('orderRef', '==', order.orderRef));
-      unsub = onSnapshot(q, snapshot => {
-        if (!snapshot.empty) {
-          setLiveStatus(snapshot.docs[0].data().status || 'pending');
-        }
-      });
+    const firestoreOrderId = orderId || order?.orderId;
+    const legacyOrderRef   = order?.orderRef;
+
+    import('firebase/firestore').then(({ query, collection, where, onSnapshot, doc, onSnapshot: onDocSnapshot }) => {
+      if (firestoreOrderId) {
+        // New path: direct doc lookup by Firestore document ID
+        import('firebase/firestore').then(({ doc: firestoreDoc, onSnapshot: snap }) => {
+          const ref = firestoreDoc(db, 'orders', firestoreOrderId);
+          unsub = snap(ref, (snapshot) => {
+            if (snapshot.exists()) {
+              setLiveStatus(snapshot.data().status || 'pending');
+            }
+          });
+        });
+      } else if (legacyOrderRef) {
+        // Legacy path: query by orderRef field
+        const q = query(collection(db, 'orders'), where('orderRef', '==', legacyOrderRef));
+        unsub = onSnapshot(q, (snapshot) => {
+          if (!snapshot.empty) {
+            setLiveStatus(snapshot.docs[0].data().status || 'pending');
+          }
+        });
+      }
     });
     return () => { if (unsub) unsub(); };
-  }, [order?.orderRef]);
+  }, [orderId, order?.orderRef, order?.orderId]);
 
   // Request notification permission
   const requestNotifications = async () => {
@@ -62,10 +80,11 @@ export default function OrderConfirmationPage() {
     }
   };
 
-  if (!order) { navigate('/'); return null; }
+  // Allow page to render when arrived via /order-confirmation/:orderId (no full state)
+  if (!order && !orderId) { navigate('/'); return null; }
 
-  const isDelivery = order.orderMode === 'delivery';
-  const isDineIn = order.orderMode === 'dinein';
+  const isDelivery = order?.orderMode === 'delivery';
+  const isDineIn = order?.orderMode === 'dinein';
   const steps = isDelivery ? DELIVERY_STEPS : isDineIn ? DINEIN_STEPS : PICKUP_STEPS;
   const currentStepIndex = STATUS_ORDER.indexOf(liveStatus);
   const isComplete = liveStatus === 'delivered' || (liveStatus === 'ready' && !isDelivery);
@@ -84,11 +103,11 @@ export default function OrderConfirmationPage() {
           {isComplete ? (isDelivery ? 'Delivered!' : 'Ready!') : 'Order Placed!'}
         </h1>
         <p style={{ color: '#7A9483', fontSize: 15 }}>
-          Order <span style={{ fontWeight: 800, color: '#E8410A', fontFamily: 'monospace' }}>#{order.orderRef}</span>
+          Order <span style={{ fontWeight: 800, color: '#E8410A', fontFamily: 'monospace' }}>#{order?.orderRef || orderId}</span>
         </p>
-        {order.orderType === 'preorder' && (
+        {order?.orderType === 'preorder' && (
           <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '8px 16px', display: 'inline-block', marginTop: 8, fontSize: 13, color: '#1A7A4A', fontWeight: 600 }}>
-            📅 Scheduled: {order.scheduledFor}
+            📅 Scheduled: {order?.scheduledFor}
           </div>
         )}
       </div>
@@ -184,14 +203,14 @@ export default function OrderConfirmationPage() {
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '20px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>Order Details</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {order.items?.map(item => (
+          {order?.items?.map(item => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#3D5944' }}>
               <span>{item.displayName || item.name} × {item.qty}</span>
               <span>${(item.price * item.qty).toFixed(2)}</span>
             </div>
           ))}
           <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 800, color: '#1A7A4A' }}>
-            <span>TOTAL</span><span>${order.total?.toFixed(2)}</span>
+            <span>TOTAL</span><span>${order?.total?.toFixed(2)}</span>
           </div>
         </div>
         <div style={{ marginTop: 14, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0', fontSize: 13, color: '#1A7A4A', fontWeight: 600 }}>
@@ -199,16 +218,16 @@ export default function OrderConfirmationPage() {
         </div>
       </div>
 
-      {isDelivery && order.address && (
+      {isDelivery && order?.address && (
         <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400E' }}>
           📍 Delivering to: <strong>{order.address}</strong>
         </div>
       )}
 
       {/* Loyalty stamp card */}
-      {order.stamps !== undefined && (
+      {order?.stamps !== undefined && (
         <div style={{ background:'linear-gradient(135deg,#1A7A4A,#22A060)', borderRadius:14, padding:'20px', marginBottom:20, color:'#fff' }}>
-          {order.freeReward ? (
+          {order?.freeReward ? (
             <>
               <div style={{ textAlign:'center', marginBottom:16 }}>
                 <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
@@ -230,13 +249,13 @@ export default function OrderConfirmationPage() {
               </div>
               <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:12 }}>
                 {Array.from({ length:5 }).map((_,i)=>(
-                  <div key={i} style={{ width:44, height:44, borderRadius:'50%', background:i<order.stamps?'#FCD34D':'rgba(255,255,255,0.2)', border:`2px solid ${i<order.stamps?'#F59E0B':'rgba(255,255,255,0.3)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
-                    {i<order.stamps?'⭐':''}
+                  <div key={i} style={{ width:44, height:44, borderRadius:'50%', background:i<order?.stamps?'#FCD34D':'rgba(255,255,255,0.2)', border:`2px solid ${i<order?.stamps?'#F59E0B':'rgba(255,255,255,0.3)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
+                    {i<order?.stamps?'⭐':''}
                   </div>
                 ))}
               </div>
               <div style={{ textAlign:'center', fontSize:12, opacity:0.85 }}>
-                {5-order.stamps} more order{5-order.stamps!==1?'s':''} until a free meal!
+                {5-(order?.stamps||0)} more order{5-(order?.stamps||0)!==1?'s':''} until a free meal!
               </div>
             </>
           )}
