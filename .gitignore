@@ -1,5 +1,9 @@
 # dependencies
 node_modules/
+server/node_modules/
+
+# backend secrets
+server/.env
 
 # production build
 build/
@@ -14,6 +18,7 @@ build/
 # misc
 .DS_Store
 *.local
+.playwright-mcp/
 
 # logs
 npm-debug.log*

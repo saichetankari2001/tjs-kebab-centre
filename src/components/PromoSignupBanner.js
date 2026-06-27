@@ -26,20 +26,31 @@ export default function PromoSignupBanner() {
     setError('');
 
     try {
-      // Save to Firestore subscribers collection
-      await addDoc(collection(db, 'subscribers'), {
-        email,
-        phone: '',
-        channels: ['email'],
-        createdAt: serverTimestamp(),
-      });
+      // Try backend first; fall back to direct Firestore write
+      const apiUrl = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
+      let saved = false;
+      try {
+        const res = await fetch(`${apiUrl}/api/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, channels: ['email'] }),
+        });
+        saved = res.ok;
+      } catch { /* backend not running — fall through to Firestore */ }
+
+      if (!saved) {
+        await addDoc(collection(db, 'subscribers'), {
+          email,
+          phone: '',
+          channels: ['email'],
+          createdAt: serverTimestamp(),
+        });
+      }
 
       setDone(true);
-      // Auto-dismiss after 2.5 seconds
       setTimeout(dismiss, 2500);
     } catch (err) {
-      console.error('Error saving subscriber:', err);
-      // Still mark as done even if there's an error (fire-and-forget pattern)
+      console.error('Subscribe error:', err);
       setDone(true);
       setTimeout(dismiss, 2500);
     } finally {

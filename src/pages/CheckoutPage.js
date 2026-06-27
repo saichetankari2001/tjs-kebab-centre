@@ -108,6 +108,23 @@ export default function CheckoutPage() {
         },
       });
       clearCart();
+
+      // Fire-and-forget — never block navigation on notification failure
+      if (form.email.trim()) {
+        fetch(`${process.env.REACT_APP_API_URL ?? 'http://localhost:4000'}/api/notify/order-confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to:        form.email.trim(),
+            firstName: form.firstName.trim(),
+            orderId:   orderRef.id,
+            items:     cart.map((i) => ({ name: i.displayName ?? i.name, price: i.price, qty: i.qty })),
+            total,
+            phone: form.phone.trim() || null,
+          }),
+        }).catch(() => {});
+      }
+
       navigate(`/order-confirmation/${orderRef.id}`, {
         state: {
           orderId:      orderRef.id,

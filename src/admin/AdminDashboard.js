@@ -5,7 +5,9 @@ import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
 
-const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code'];
+const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code', '📢 Blast'];
+
+const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState(0);
@@ -18,6 +20,11 @@ export default function AdminDashboard() {
   const [showAddPromo, setShowAddPromo] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [qrUrl, setQrUrl] = useState('https://tjs-kebab-centre.netlify.app');
+  const [blastMsg, setBlastMsg] = useState('');
+  const [blastSubject, setBlastSubject] = useState('');
+  const [blastChannels, setBlastChannels] = useState(['email']);
+  const [blasting, setBlasting] = useState(false);
+  const [blastResult, setBlastResult] = useState(null);
 
   useEffect(() => {
     const unsubs = [
@@ -315,6 +322,115 @@ export default function AdminDashboard() {
               <button onClick={() => window.print()} style={{ flex: 1, background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>🖨️ Print</button>
               <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(qrUrl)}`} download="tjs-menu-qr.png" target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, textAlign: 'center', textDecoration: 'none' }}>⬇️ Download</a>
             </div>
+          </div>
+        )}
+
+        {/* BLAST */}
+        {tab === 7 && (
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>📢 Send Promo Blast</h2>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
+              Send a promotional message to all subscribers via email, SMS, or push. Requires the backend server running at <code>{API_URL}</code>.
+            </p>
+
+            {/* Channel selector */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Channels</label>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {[['email', '📧 Email'], ['sms', '💬 SMS'], ['push', '🔔 Push']].map(([ch, label]) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => setBlastChannels(prev =>
+                      prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]
+                    )}
+                    style={{
+                      padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      border: `1px solid ${blastChannels.includes(ch) ? 'var(--brand)' : 'var(--border)'}`,
+                      background: blastChannels.includes(ch) ? 'rgba(245,158,11,0.12)' : 'var(--card)',
+                      color: blastChannels.includes(ch) ? 'var(--brand)' : 'var(--muted)',
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Subject (email only) */}
+            {blastChannels.includes('email') && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Email Subject</label>
+                <input
+                  value={blastSubject}
+                  onChange={e => setBlastSubject(e.target.value)}
+                  placeholder="e.g. 20% off this weekend only 🥙"
+                  style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Message */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Message</label>
+              <textarea
+                value={blastMsg}
+                onChange={e => setBlastMsg(e.target.value)}
+                placeholder="This weekend only — get 20% off all kebab wraps! Use code KEBAB20 at checkout."
+                rows={4}
+                style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Send button */}
+            <button
+              onClick={async () => {
+                if (!blastMsg.trim()) { alert('Message is required'); return; }
+                if (!blastChannels.length) { alert('Select at least one channel'); return; }
+                if (!window.confirm(`Send blast to all subscribers via: ${blastChannels.join(', ')}?`)) return;
+
+                setBlasting(true);
+                setBlastResult(null);
+                try {
+                  const { auth: firebaseAuth } = await import('../firebase');
+                  const token = await firebaseAuth.currentUser?.getIdToken();
+                  const res = await fetch(`${API_URL}/api/notify/blast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ subject: blastSubject || undefined, message: blastMsg, channels: blastChannels }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error ?? 'Blast failed');
+                  setBlastResult({ ok: true, data });
+                  setBlastMsg('');
+                  setBlastSubject('');
+                } catch (err) {
+                  setBlastResult({ ok: false, error: err.message });
+                } finally {
+                  setBlasting(false);
+                }
+              }}
+              disabled={blasting}
+              style={{ width: '100%', background: 'var(--brand)', color: '#000', border: 'none', padding: '14px', borderRadius: 10, fontWeight: 900, fontSize: 15, cursor: blasting ? 'not-allowed' : 'pointer', opacity: blasting ? 0.6 : 1 }}
+            >
+              {blasting ? '⏳ Sending...' : '🚀 Send Blast'}
+            </button>
+
+            {/* Result */}
+            {blastResult && (
+              <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${blastResult.ok ? 'rgba(74,222,128,0.3)' : 'rgba(255,107,107,0.3)'}`, background: blastResult.ok ? 'rgba(74,222,128,0.08)' : 'rgba(255,107,107,0.08)' }}>
+                {blastResult.ok ? (
+                  <>
+                    <p style={{ color: '#4ade80', fontWeight: 700, margin: '0 0 6px' }}>✓ Blast sent!</p>
+                    {Object.entries(blastResult.data.results ?? {}).map(([ch, r]) => (
+                      <p key={ch} style={{ color: 'var(--muted)', fontSize: 13, margin: '2px 0' }}>
+                        {ch}: {r?.sent ?? 0} sent, {r?.failed ?? 0} failed
+                      </p>
+                    ))}
+                  </>
+                ) : (
+                  <p style={{ color: '#FF6B6B', fontWeight: 700, margin: 0 }}>✗ {blastResult.error}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
