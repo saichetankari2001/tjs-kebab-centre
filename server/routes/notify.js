@@ -6,7 +6,6 @@ const { sendPushBlast }                        = require('../services/push');
 const admin = require('../services/firebaseAdmin');
 
 const router = Router();
-const db     = admin.firestore();
 
 // Order confirmation — called from frontend after successful checkout
 router.post('/order-confirm', async (req, res) => {
@@ -54,6 +53,7 @@ router.post('/blast', verifyAdmin, async (req, res) => {
     return res.status(400).json({ error: 'message is required' });
   }
 
+  const db = admin.firestore();
   const snap = await db.collection('subscribers').get();
   const subscribers = snap.docs.map((d) => d.data());
 

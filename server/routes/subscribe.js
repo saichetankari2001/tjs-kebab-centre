@@ -2,7 +2,6 @@ const { Router } = require('express');
 const admin = require('../services/firebaseAdmin');
 
 const router = Router();
-const db     = admin.firestore();
 
 router.post('/', async (req, res) => {
   const { email, phone, pushToken, channels = [] } = req.body;
@@ -12,6 +11,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    const db = admin.firestore();
     await db.collection('subscribers').add({
       email:     email     ?? null,
       phone:     phone     ?? null,
@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({ message: 'Subscribed successfully' });
   } catch (err) {
     console.error('Subscribe error:', err);
-    res.status(500).json({ error: 'Failed to save subscription' });
+    res.status(503).json({ error: err.message });
   }
 });
 
