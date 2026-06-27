@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, orderBy, increment } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
@@ -72,13 +72,31 @@ export default function AdminDashboard() {
 
   const updateOrderStatus = async (id, status) => {
     await updateDoc(doc(db, 'orders', id), { status });
+
+    // Increment loyalty stamps when order is marked ready
+    if (status === 'ready') {
+      const order = orders.find(o => o.id === id);
+      if (order?.customerId) {
+        const custRef = doc(db, 'customers', order.customerId);
+        const custSnap = await getDoc(custRef);
+        if (custSnap.exists()) {
+          const currentStamps = custSnap.data().stamps ?? 0;
+          const newStamps = currentStamps + 1;
+          await updateDoc(custRef, {
+            stamps:            newStamps >= 5 ? 0 : newStamps,
+            totalOrders:       increment(1),
+            freeOrderEligible: newStamps >= 5,
+          });
+        }
+      }
+    }
+
     // Send notification
     const order = orders.find(o => o.id === id);
     if (order?.fcmToken && STATUS_MESSAGES[status]) {
       const { title, body } = STATUS_MESSAGES[status];
       try {
-        const { addDoc, collection: col } = await import('firebase/firestore');
-        await addDoc(col(db, 'notifications'), { token: order.fcmToken, title, body, orderId: id, createdAt: new Date().toISOString() });
+        await addDoc(collection(db, 'notifications'), { token: order.fcmToken, title, body, orderId: id, createdAt: new Date().toISOString() });
       } catch(e) { console.log('Notification error:', e); }
     }
   };

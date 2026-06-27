@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
@@ -21,6 +22,7 @@ export default function App() {
   if (path.startsWith('/staff')) return <StaffPortal />;
 
   return (
+    <AuthProvider>
     <CartProvider>
       <BrowserRouter>
         <Navbar />
@@ -38,5 +40,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </CartProvider>
+    </AuthProvider>
   );
 }

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../hooks/useAuth';
+import LoyaltyCard from '../components/LoyaltyCard';
 
 const STATUS_STEPS = [
   { key: 'pending',   label: 'Order Placed', icon: '✓'   },
@@ -15,6 +18,7 @@ export default function OrderConfirmationPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { orderId: paramOrderId } = useParams();
+  const { user, customer } = useAuth();
 
   const stateOrderId    = location.state?.orderId;
   const customerName    = location.state?.customerName;
@@ -200,40 +204,29 @@ export default function OrderConfirmationPage() {
         </div>
       )}
 
-      {/* ── Loyalty Stamp Counter ── */}
-      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5 animate-slideUp">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-black text-muted tracking-widest uppercase">
-            Loyalty Rewards
+      {/* ── Loyalty Stamps ── */}
+      {user && customer ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="w-full max-w-sm"
+        >
+          <p className="text-[10px] font-black text-muted tracking-widest uppercase mb-3 text-center">
+            Your Loyalty Progress
           </p>
-          <span className="text-2xl">⭐</span>
+          <LoyaltyCard stamps={customer.stamps} freeOrderEligible={customer.freeOrderEligible} />
+        </motion.div>
+      ) : (
+        <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5 animate-slideUp text-center">
+          <p className="text-[10px] font-black text-muted tracking-widest uppercase mb-2">Loyalty Rewards</p>
+          <p className="text-white text-sm font-semibold mb-1">Earn a free kebab!</p>
+          <p className="text-muted text-xs mb-3">Create an account to track your stamps and get rewarded after 5 orders.</p>
+          <a href="/signup" className="inline-block bg-brand text-surface font-black text-xs px-5 py-2.5 rounded-lg hover:bg-brand-lit transition-colors">
+            Join Loyalty Programme →
+          </a>
         </div>
-
-        {/* Stamp grid */}
-        <div className="flex gap-2 justify-center mb-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className={[
-                'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg transition-all duration-300',
-                i < stampCount
-                  ? 'bg-brand border-brand text-surface animate-stamp'
-                  : 'bg-card2 border-border text-muted/30',
-              ].join(' ')}
-            >
-              {i < stampCount ? '🥙' : ''}
-            </div>
-          ))}
-        </div>
-
-        <p className="text-white text-sm font-bold text-center">
-          Order {stampCount} of 5 for your{' '}
-          <span className="text-brand">FREE kebab!</span>
-        </p>
-        <p className="text-muted text-xs text-center mt-1">
-          {5 - stampCount} more order{5 - stampCount !== 1 ? 's' : ''} until a free meal
-        </p>
-      </div>
+      )}
 
       {/* ── Back to Menu ── */}
       <button

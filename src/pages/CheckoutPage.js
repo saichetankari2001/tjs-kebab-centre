@@ -4,6 +4,7 @@ import { ArrowLeft, User, Phone, Mail, MessageSquare, Sparkles } from 'lucide-re
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../hooks/useAuth';
 import PromoSignupBanner from '../components/PromoSignupBanner';
 
 const PAYMENT_OPTIONS = [
@@ -35,9 +36,16 @@ function Field({ error, children }) {
 
 export default function CheckoutPage() {
   const { cart, total, itemCount, clearCart } = useCart();
+  const { user, customer } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', email: '', note: '' });
+  const [form, setForm] = useState({
+    firstName: customer?.firstName ?? '',
+    lastName:  customer?.lastName  ?? '',
+    phone:     customer?.phone     ?? '',
+    email:     user?.email         ?? '',
+    note: '',
+  });
   const [payment,    setPayment]    = useState('cash');
   const [promoEmail, setPromoEmail] = useState('');
   const [promoSMS,   setPromoSMS]   = useState('');
@@ -69,6 +77,7 @@ export default function CheckoutPage() {
     setSubmitting(true);
     try {
       const orderRef = await addDoc(collection(db, 'orders'), {
+        customerId: user?.uid ?? null,
         customer: {
           firstName: form.firstName.trim(),
           lastName:  form.lastName.trim(),

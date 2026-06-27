@@ -1,11 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ShoppingBag, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
   const { itemCount } = useCart();
+  const { user, customer } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -15,11 +17,7 @@ export default function Navbar() {
       transition={{ duration: 0.3 }}
       className="sticky top-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-5 md:px-8"
     >
-      {/* Logo */}
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center gap-2 focus:outline-none"
-      >
+      <button onClick={() => navigate('/')} className="flex items-center gap-2 focus:outline-none">
         <span className="font-display text-2xl tracking-wide text-white leading-none">
           TJ'S <span className="text-brand">KEBAB</span>
         </span>
@@ -28,8 +26,29 @@ export default function Navbar() {
         </span>
       </button>
 
-      {/* Right actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {user ? (
+          <Link
+            to="/account"
+            className="flex items-center gap-1.5 text-muted hover:text-white text-xs font-semibold transition-colors px-2 py-1"
+          >
+            <User size={14} />
+            <span className="hidden sm:inline">{customer?.firstName ?? 'Account'}</span>
+            {(customer?.stamps ?? 0) > 0 && (
+              <span className="bg-brand text-surface text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {customer.stamps}/5
+              </span>
+            )}
+          </Link>
+        ) : (
+          <Link
+            to="/login"
+            className="text-muted hover:text-white text-xs font-semibold transition-colors px-2 py-1 hidden sm:block"
+          >
+            Sign In
+          </Link>
+        )}
+
         <button
           onClick={() => navigate('/cart')}
           className="relative flex items-center gap-2 bg-brand text-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-lit transition-colors active:scale-95"
