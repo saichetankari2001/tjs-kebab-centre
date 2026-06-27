@@ -1,0 +1,547 @@
+- generic:
+  - generic:
+    - navigation:
+      - generic:
+        - generic: TJ
+        - generic:
+          - generic: TJ's Kebab
+          - generic: Bundoora · Halal
+      - button: Menu
+      - button:
+        - text: 🛒
+        - generic: Cart
+    - generic:
+      - generic:
+        - generic:
+          - generic: Bundoora's Finest · Halal Certified
+          - heading [level=1]: TJ's Kebab Centre
+          - paragraph: Real Flavour. Real Food. Fresh Chargrilled Halal Kebabs.
+          - generic:
+            - generic: Halal Certified
+            - generic: Bundoora VIC
+            - generic: Fresh Daily
+            - generic: Pickup Ready
+          - button: ORDER NOW →
+      - generic:
+        - generic:
+          - button: 🥣Signature Bowls
+          - button: 🌯Kebab Wraps
+          - button: 🍟HSP
+          - button: 🍢Skewers & Burgers
+          - button: 🧆Falafel
+          - button: 🥤Drinks
+      - generic:
+        - generic:
+          - generic:
+            - generic: 🥣
+            - heading [level=2]: Signature Bowls
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chicken Salad Bowl
+                - paragraph: Tender seasoned halal chicken served on a fresh bed of lettuce, tomato, onion, salad mix & tabouli, topped with your choice of sauce.
+                - generic:
+                  - generic: $15.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Chicken Rice Bowl
+                - paragraph: Tender seasoned halal chicken on a bed of lightly saffron-infused rice, accompanied by fresh salad & your choice of sauce.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Lamb Salad Bowl
+                - paragraph: Slow-roasted halal lamb served on a fresh bed of lettuce, tomato, onion, salad mix & tabouli.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Lamb Rice Bowl
+                - paragraph: Slow-roasted halal lamb on a bed of lightly saffron-infused rice, accompanied by fresh salad & your choice of sauce.
+                - generic:
+                  - generic: $17.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Mix Salad Bowl 🔥
+                - paragraph: A generous combination of seasoned chicken & slow-roasted lamb on a fresh bed of lettuce, tomato, onion, salad mix & tabouli.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Mix Rice Bowl 🔥
+                - paragraph: A generous combination of seasoned chicken & slow-roasted lamb on saffron-infused rice with fresh salad.
+                - generic:
+                  - generic: $17.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chargrilled Chicken Salad Bowl
+                - paragraph: Flame-grilled halal chicken, smoky & juicy, served on a fresh bed of lettuce, tomato, onion, salad mix & tabouli.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chargrilled Chicken Rice Bowl
+                - paragraph: Flame-grilled halal chicken on a bed of saffron-infused rice, accompanied by fresh salad & your choice of sauce.
+                - generic:
+                  - generic: $17.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: 🔥 Special Salad Bowl
+                - paragraph: Our chef's signature creation — a premium blend of chargrilled meats on a fresh bed of lettuce, tomato, onion, salad mix & tabouli.
+                - generic:
+                  - generic: $23.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: 🔥 Special Rice Bowl
+                - paragraph: Our chef's signature creation — a premium blend of chargrilled meats on saffron-infused rice with fresh salad.
+                - generic:
+                  - generic: $24.00
+                  - generic:
+                    - img
+        - generic:
+          - generic:
+            - generic: 🌯
+            - heading [level=2]: Kebab Wraps
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Original Chicken Wrap
+                - paragraph: Tender seasoned halal chicken wrapped in freshly baked pita bread, filled with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Original Lamb Wrap
+                - paragraph: Slow-roasted halal lamb wrapped in freshly baked pita bread, filled with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $18.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Original Mix Wrap 🔥
+                - paragraph: A perfect combination of seasoned chicken & slow-roasted lamb in freshly baked pita bread, with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $18.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chargrilled Chicken Wrap
+                - paragraph: Smoky flame-grilled halal chicken wrapped in freshly baked pita bread, filled with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $18.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chargrilled Lamb Wrap
+                - paragraph: Premium chargrilled halal lamb wrapped in freshly baked pita bread, with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $20.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chargrilled Mix Wrap 🔥
+                - paragraph: The ultimate wrap — premium chargrilled chicken & lamb in freshly baked pita bread, with crisp lettuce, tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $20.00
+                  - generic:
+                    - img
+        - generic:
+          - generic:
+            - generic: 🍟
+            - heading [level=2]: HSP
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Small — Chicken
+                - paragraph: Golden crispy chips layered with tender seasoned chicken, finished with your choice of sauce.
+                - generic:
+                  - generic: $15.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Small — Lamb
+                - paragraph: Golden crispy chips layered with slow-roasted lamb, finished with your choice of sauce.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Small — Mix
+                - paragraph: Golden crispy chips layered with a mix of chicken & lamb, finished with your choice of sauce.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Medium — Chicken
+                - paragraph: A generous serve of golden crispy chips piled high with seasoned chicken, smothered in your choice of sauce.
+                - generic:
+                  - generic: $20.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: HSP Medium — Mix 🔥
+                - paragraph: A generous serve of golden crispy chips loaded with chicken & lamb, smothered in your choice of sauce.
+                - generic:
+                  - generic: $22.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Large — Chicken
+                - paragraph: An abundant serve of golden crispy chips generously loaded with seasoned chicken & your choice of sauce.
+                - generic:
+                  - generic: $24.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP Large — Lamb
+                - paragraph: An abundant serve of golden crispy chips generously loaded with slow-roasted lamb & your choice of sauce.
+                - generic:
+                  - generic: $27.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: HSP X-Large — Mix
+                - paragraph: Our ultimate halal snack pack — massive golden crispy chips loaded with chicken & lamb. Made to share.
+                - generic:
+                  - generic: $40.00
+                  - generic:
+                    - img
+        - generic:
+          - generic:
+            - generic: 🍢
+            - heading [level=2]: Skewers & Burgers
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Lamb Skewer with Rice
+                - paragraph: Juicy marinated halal lamb skewer, chargrilled to perfection, served on a bed of lightly saffron-infused rice with your choice of sauce.
+                - generic:
+                  - generic: $27.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Chicken Skewer with Rice
+                - paragraph: Tender marinated halal chicken skewer, chargrilled to perfection, served on a bed of lightly saffron-infused rice with your choice of sauce.
+                - generic:
+                  - generic: $27.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Lamb Burger — Single
+                - paragraph: A well-seasoned halal lamb patty, chargrilled and served in a toasted bun with crisp lettuce, fresh tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $15.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic: ★ POPULAR
+              - generic:
+                - heading [level=3]: Lamb Burger — Double 🔥
+                - paragraph: Two premium halal lamb patties, chargrilled and stacked high in a toasted bun with crisp lettuce, fresh tomato, onion & your choice of sauce.
+                - generic:
+                  - generic: $19.00
+                  - generic:
+                    - img
+        - generic:
+          - generic:
+            - generic: 🧆
+            - heading [level=2]: Falafel
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Falafel OG Wrap
+                - paragraph: Crispy house-made falafel in freshly baked pita bread, filled with crisp lettuce, fresh tomato, onion, salad mix & tabouli, finished with your choice of sauce.
+                - generic:
+                  - generic: $16.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Falafel Garden Wrap
+                - paragraph: A vibrant garden wrap — crispy house-made falafel in freshly baked pita bread, layered with crisp lettuce, fresh tomato, onion, salad mix & tabouli.
+                - generic:
+                  - generic: $18.00
+                  - generic:
+                    - img
+        - generic:
+          - generic:
+            - generic: 🥤
+            - heading [level=2]: Drinks
+          - generic:
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Classic 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Pepsi Max 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Zero Sugar 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Diet 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Solo 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Sunkist 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Schweppes 375ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Classic 600ml
+                - generic:
+                  - generic: $5.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Fanta 600ml
+                - generic:
+                  - generic: $5.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Zero Sugar 600ml
+                - generic:
+                  - generic: $5.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Red Bull 250ml
+                - generic:
+                  - generic: $5.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Water Bottle 600ml
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Sparkling Water
+                - generic:
+                  - generic: $3.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Coke Classic 1.25L
+                - generic:
+                  - generic: $7.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Sprite 1.25L
+                - generic:
+                  - generic: $7.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Pepsi 1.25L
+                - generic:
+                  - generic: $7.00
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic: 🥙
+              - generic:
+                - heading [level=3]: Fanta 1.25L
+                - generic:
+                  - generic: $7.00
+                  - generic:
+                    - img
+  - dialog "Chicken Salad Bowl" [ref=e528]:
+    - generic [ref=e531]:
+      - generic [ref=e532]:
+        - generic [ref=e533]:
+          - heading "Chicken Salad Bowl" [level=2] [ref=e534]
+          - paragraph [ref=e535]: Tender seasoned halal chicken served on a fresh bed of lettuce, tomato, onion, salad mix & tabouli, topped with your choice of sauce.
+          - paragraph [ref=e536]: $15.00
+        - button [active] [ref=e537] [cursor=pointer]:
+          - img [ref=e538]
+      - generic [ref=e541]:
+        - heading "Special Instructions" [level=3] [ref=e543]
+        - textbox "e.g. extra crispy, no onion, allergies..." [ref=e544]
+        - paragraph [ref=e545]: 0/500
+      - generic [ref=e546]:
+        - generic [ref=e547]:
+          - button [ref=e548] [cursor=pointer]:
+            - img [ref=e549]
+          - generic [ref=e550]: "1"
+          - button [ref=e551] [cursor=pointer]:
+            - img [ref=e552]
+        - button "Add to Order $15.00" [ref=e553] [cursor=pointer]:
+          - generic [ref=e554]: Add to Order
+          - generic [ref=e555]: $15.00

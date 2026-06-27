@@ -1,0 +1,12 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4] [cursor=pointer]:
+      - generic [ref=e5]: TJ
+      - generic [ref=e6]:
+        - generic [ref=e7]: TJ's Kebab
+        - generic [ref=e8]: Bundoora · Halal
+    - button "Menu" [ref=e9] [cursor=pointer]
+    - button "🛒 Cart" [ref=e10] [cursor=pointer]:
+      - text: 🛒
+      - generic [ref=e11]: Cart
+  - generic [ref=e13]: Loading menu...

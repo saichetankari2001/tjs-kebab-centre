@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TJ's Kebab Centre — Design Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0e0e0e;color:#f5f5f5}
+
+/* ─── NAVBAR ─── */
+.navbar{background:#1a1a1a;border-bottom:1px solid #2a2a2a;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:20px;font-weight:900;letter-spacing:-0.5px;color:#fff}.logo span{color:#f59e0b}
+.nav-actions{display:flex;gap:12px;align-items:center}
+.nav-btn{background:#f59e0b;color:#0e0e0e;border:none;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.3px}
+
+/* ─── HERO ─── */
+.hero{background:linear-gradient(135deg,#1a1a1a 0%,#111 50%,#1c1400 100%);padding:48px 24px;text-align:center;border-bottom:1px solid #2a2a2a;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(245,158,11,0.15) 0%,transparent 70%)}
+.hero-tag{display:inline-block;background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:16px}
+.hero h1{font-size:38px;font-weight:900;line-height:1.1;letter-spacing:-1px;margin-bottom:12px}
+.hero h1 span{color:#f59e0b}
+.hero p{color:#888;font-size:15px;max-width:400px;margin:0 auto 24px}
+.hero-cta{background:#f59e0b;color:#0e0e0e;border:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:0.3px}
+
+/* ─── CATEGORY NAV ─── */
+.cat-nav{background:#111;border-bottom:1px solid #222;padding:0 20px;position:sticky;top:60px;z-index:90;overflow-x:auto;display:flex;gap:4px;scrollbar-width:none}
+.cat-nav::-webkit-scrollbar{display:none}
+.cat-pill{padding:10px 16px;border-radius:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:#666;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none}
+.cat-pill.active{color:#f59e0b;border-bottom-color:#f59e0b}
+.cat-pill:hover{color:#ccc}
+
+/* ─── MENU SECTION ─── */
+.menu-section{padding:0 20px;margin-top:32px}
+.section-header{margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #222}
+.section-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.section-title span{color:#f59e0b}
+.section-count{font-size:12px;color:#555;margin-top:2px;font-weight:500}
+
+.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:40px}
+
+/* ─── MENU CARD (Domino's style) ─── */
+.menu-card{background:#1a1a1a;border:1px solid #222;border-radius:0;padding:18px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:background 0.15s,border-color 0.15s;position:relative}
+.menu-card:hover{background:#1f1f1f;border-color:#333}
+.menu-card-badge{position:absolute;top:12px;right:12px;background:#f59e0b;color:#000;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:4px}
+.menu-card-name{font-size:14px;font-weight:700;color:#f0f0f0;line-height:1.3}
+.menu-card-desc{font-size:12px;color:#666;line-height:1.4;flex:1}
+.menu-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.menu-card-price{font-size:16px;font-weight:800;color:#f59e0b}
+.menu-card-add{background:#f59e0b;color:#0e0e0e;border:none;width:30px;height:30px;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.menu-card-add:hover{background:#fbbf24}
+
+/* ─── CART PAGE ─── */
+.page{display:none;flex-direction:column;min-height:100vh;padding:0 0 100px}
+.page.active{display:flex}
+.page-header{padding:20px 20px 16px;border-bottom:1px solid #222;display:flex;align-items:center;gap:12px}
+.back-btn{background:#222;border:none;color:#aaa;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.page-title{font-size:20px;font-weight:800}
+
+.order-type-bar{display:flex;gap:2px;margin:16px 20px;background:#161616;border-radius:10px;padding:4px}
+.order-type-btn{flex:1;padding:9px;text-align:center;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#666}
+.order-type-btn.active{background:#f59e0b;color:#000}
+
+.cart-items{padding:0 20px;display:flex;flex-direction:column;gap:2px}
+.cart-item{background:#1a1a1a;border:1px solid #222;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.cart-item:first-child{border-radius:10px 10px 0 0}
+.cart-item:last-child{border-radius:0 0 10px 10px}
+.cart-item-info{flex:1}
+.cart-item-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.cart-item-custom{font-size:11px;color:#666;margin-bottom:6px;line-height:1.4}
+.cart-item-price{font-size:14px;font-weight:700;color:#f59e0b}
+.qty-control{display:flex;align-items:center;gap:8px}
+.qty-btn{background:#222;border:none;color:#ccc;width:28px;height:28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer}
+.qty-btn:hover{background:#f59e0b;color:#000}
+.qty-val{font-size:14px;font-weight:700;width:20px;text-align:center}
+
+.section-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;padding:16px 20px 8px}
+.add-drink-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 20px;margin-bottom:8px}
+.drink-card{background:#1a1a1a;border:1px solid #222;padding:12px;text-align:center;border-radius:6px;cursor:pointer}
+.drink-card:hover{border-color:#f59e0b44}
+.drink-name{font-size:11px;font-weight:600;color:#ccc;margin-bottom:4px}
+.drink-price{font-size:12px;font-weight:700;color:#f59e0b}
+
+.cart-summary{margin:16px 20px;background:#1a1a1a;border:1px solid #222;border-radius:10px;overflow:hidden}
+.summary-row{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:14px;border-bottom:1px solid #222}
+.summary-row:last-child{border-bottom:none}
+.summary-row.total{font-weight:800;font-size:16px}
+.summary-row.total .val{color:#f59e0b}
+
+.cart-cta{position:fixed;bottom:0;left:0;right:0;padding:16px 20px;background:#111;border-top:1px solid #222}
+.cta-btn{width:100%;background:#f59e0b;color:#000;border:none;padding:16px;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;display:flex;justify-content:space-between;align-items:center;letter-spacing:0.3px}
+
+/* ─── CHECKOUT ─── */
+.checkout-section{padding:0 20px;margin-bottom:20px}
+.checkout-section-title{font-size:13px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#888;margin-bottom:10px}
+.input-group{display:flex;flex-direction:column;gap:8px}
+.input-field{background:#1a1a1a;border:1px solid #2a2a2a;color:#f5f5f5;padding:13px 14px;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color 0.15s}
+.input-field:focus{border-color:#f59e0b}
+.input-field::placeholder{color:#444}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.promo-signup{background:#111;border:1px solid #f59e0b33;border-radius:10px;padding:16px;margin:0 20px 20px}
+.promo-signup-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.promo-icon{font-size:20px}
+.promo-title{font-size:14px;font-weight:700}
+.promo-sub{font-size:12px;color:#666;margin-top:1px}
+.promo-channels{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.promo-channel{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:600;color:#888;transition:all 0.15s}
+.promo-channel.active{border-color:#f59e0b;color:#f59e0b;background:#f59e0b11}
+.promo-channel input{accent-color:#f59e0b}
+.promo-input-row{display:flex;gap:8px}
+.promo-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#f5f5f5;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+.promo-input:focus{border-color:#f59e0b}
+.promo-input::placeholder{color:#444}
+.promo-save-btn{background:#f59e0b;color:#000;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+.payment-options{display:flex;flex-direction:column;gap:8px}
+.payment-option{display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s}
+.payment-option.active{border-color:#f59e0b}
+.payment-radio{width:18px;height:18px;border-radius:50%;border:2px solid #444;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.payment-radio.active{border-color:#f59e0b;background:#f59e0b}
+.payment-radio.active::after{content:'';width:6px;height:6px;background:#000;border-radius:50%}
+.payment-label{font-size:14px;font-weight:600}
+.payment-sub{font-size:11px;color:#666;margin-top:1px}
+
+/* ─── CONFIRM PAGE ─── */
+.confirm-wrapper{text-align:center;padding:60px 32px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.confirm-icon-ring{width:96px;height:96px;border-radius:50%;background:#f59e0b1a;border:2px solid #f59e0b44;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto}
+.confirm-title{font-size:26px;font-weight:900;letter-spacing:-0.5px}
+.confirm-order-id{font-size:12px;color:#555;font-weight:500}
+.confirm-card{width:100%;background:#1a1a1a;border:1px solid #222;border-radius:12px;padding:16px;text-align:left;margin-top:8px}
+.confirm-card-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #1f1f1f}
+.confirm-card-row:last-child{border-bottom:none;font-weight:700;color:#f59e0b;font-size:15px}
+.status-track{display:flex;justify-content:space-between;gap:4px;width:100%}
+.status-step{flex:1;text-align:center}
+.status-dot{width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.status-dot.done{background:#f59e0b;color:#000}
+.status-dot.pending{background:#222;color:#555}
+.status-line{font-size:9px;color:#555;font-weight:600;letter-spacing:0.3px}
+.status-step.active .status-line{color:#f59e0b}
+
+/* ─── TAB SWITCHER (demo only) ─── */
+.demo-tabs{position:fixed;bottom:0;left:0;right:0;background:#0e0e0e;border-top:1px solid #333;display:flex;z-index:200}
+.demo-tab{flex:1;padding:10px;text-align:center;font-size:10px;font-weight:600;color:#555;cursor:pointer;border:none;background:none;letter-spacing:0.3px}
+.demo-tab.active{color:#f59e0b}
+
+/* ─── ADMIN PRICE EDIT ─── */
+.admin-preview{background:#111;border-radius:12px;overflow:hidden;border:1px solid #222;margin:0 20px}
+.admin-header{background:#1a1a1a;padding:12px 16px;font-size:13px;font-weight:700;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
+.admin-item{padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #161616}
+.admin-item-name{flex:1;font-size:13px;font-weight:600}
+.admin-price-input{background:#0e0e0e;border:1px solid #2a2a2a;color:#f59e0b;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:700;width:70px;text-align:right;font-family:inherit}
+.admin-toggle{width:36px;height:20px;background:#f59e0b;border-radius:10px;position:relative;cursor:pointer;flex-shrink:0}
+.admin-toggle::after{content:'';position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#000}
+</style>
+</head>
+<body>
+
+<!-- ══════════ MENU PAGE ══════════ -->
+<div id="menu-page" class="page active" style="display:flex;flex-direction:column">
+
+  <nav class="navbar">
+    <span class="logo">TJ'S <span>KEBAB</span></span>
+    <div class="nav-actions">
+      <button class="nav-btn">ORDER NOW</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-tag">Freshly Made to Order</div>
+    <h1>Authentic<br/><span>Turkish</span> Grills</h1>
+    <p>Hand-rolled wraps, chargrilled meats &amp; homemade sauces. Ready in minutes.</p>
+    <button class="hero-cta">VIEW MENU ↓</button>
+  </div>
+
+  <nav class="cat-nav">
+    <button class="cat-pill active">Kebabs</button>
+    <button class="cat-pill">Burgers</button>
+    <button class="cat-pill">Chicken</button>
+    <button class="cat-pill">Sides</button>
+    <button class="cat-pill">Drinks</button>
+    <button class="cat-pill">Desserts</button>
+  </nav>
+
+  <div class="menu-section">
+    <div class="section-header">
+      <div class="section-title"><span>Kebabs</span></div>
+      <div class="section-count">8 items</div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card">
+        <div class="menu-card-badge">Popular</div>
+        <div class="menu-card-name">Chargrilled Doner Kebab</div>
+        <div class="menu-card-desc">Seasoned beef &amp; lamb, chargrilled on rotating spit. Served in bread with salad.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$14.50</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Chicken Shish</div>
+        <div class="menu-card-desc">Tender marinated chicken pieces skewered and chargrilled over open flame.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$15.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-badge">Chef's Pick</div>
+        <div class="menu-card-name">Mixed Grill Wrap</div>
+        <div class="menu-card-desc">Combination of doner, shish and adana. Grilled flatbread, fresh salad, garlic sauce.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$18.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Adana Kebab</div>
+        <div class="menu-card-desc">Spiced minced lamb on skewer, chargrilled. Wrapped with ezme and parsley.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$15.50</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Falafel Wrap</div>
+        <div class="menu-card-desc">Crispy homemade falafel, hummus, tabbouleh, pickles, tahini. Vegetarian.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$13.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Lamb Chops Wrap</div>
+        <div class="menu-card-desc">Marinated lamb cutlets chargrilled to perfection. Served with garlic aioli.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$19.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title"><span>Burgers</span></div>
+      <div class="section-count">4 items</div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card">
+        <div class="menu-card-badge">New</div>
+        <div class="menu-card-name">Smash Burger</div>
+        <div class="menu-card-desc">Double smashed beef patty, American cheese, pickles, special sauce, brioche bun.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$16.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Chicken Burger</div>
+        <div class="menu-card-desc">Crispy fried chicken thigh, slaw, pickled jalapeño, chipotle mayo, brioche.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$15.00</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Halloumi Burger</div>
+        <div class="menu-card-desc">Grilled halloumi, roasted capsicum, pesto mayo, rocket, ciabatta. Vegetarian.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$14.50</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-name">Beef &amp; Lamb Burger</div>
+        <div class="menu-card-desc">Hand-formed beef &amp; lamb patty, caramelised onions, tahini, tomato, brioche.</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">$16.50</span>
+          <button class="menu-card-add">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PRICE EDITING PREVIEW -->
+    <div class="section-header" style="margin-top:40px">
+      <div class="section-title">Admin: <span>Price Management</span></div>
+      <div class="section-count">Changes reflect in menu instantly</div>
+    </div>
+    <div class="admin-preview">
+      <div class="admin-header"><span>🍽️ Menu Items</span><span style="color:#555;font-size:11px">Auto-saves on change</span></div>
+      <div class="admin-item">
+        <div class="admin-item-name">Chargrilled Doner Kebab</div>
+        <input class="admin-price-input" value="14.50" type="number" step="0.50"/>
+        <div class="admin-toggle"></div>
+      </div>
+      <div class="admin-item">
+        <div class="admin-item-name">Chicken Shish</div>
+        <input class="admin-price-input" value="15.00" type="number" step="0.50"/>
+        <div class="admin-toggle"></div>
+      </div>
+      <div class="admin-item">
+        <div class="admin-item-name">Mixed Grill Wrap</div>
+        <input class="admin-price-input" value="18.00" type="number" step="0.50"/>
+        <div class="admin-toggle"></div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#444;margin:10px 0 40px">↑ Admin changes push to Firestore → menu updates live for all users</p>
+
+  </div>
+</div>
+
+<!-- ══════════ CART PAGE ══════════ -->
+<div id="cart-page" class="page" style="display:none;flex-direction:column;background:#0e0e0e;min-height:100vh;padding-bottom:90px">
+  <nav class="navbar">
+    <span class="logo">TJ'S <span>KEBAB</span></span>
+  </nav>
+  <div class="page-header">
+    <button class="back-btn">←</button>
+    <span class="page-title">Your Order</span>
+    <span style="margin-left:auto;font-size:12px;color:#555">3 items</span>
+  </div>
+
+  <div class="order-type-bar">
+    <button class="order-type-btn active">🛵 Delivery</button>
+    <button class="order-type-btn">🏃 Pickup</button>
+  </div>
+
+  <div class="cart-items">
+    <div class="cart-item" style="border-radius:10px 10px 0 0">
+      <div class="cart-item-info">
+        <div class="cart-item-name">Chargrilled Doner Kebab</div>
+        <div class="cart-item-custom">Garlic sauce · Extra chilli · No onion</div>
+        <div class="cart-item-price">$14.50</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn">−</button>
+        <span class="qty-val">1</span>
+        <button class="qty-btn">+</button>
+      </div>
+    </div>
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">Mixed Grill Wrap</div>
+        <div class="cart-item-custom">Chipotle sauce · Extra meat</div>
+        <div class="cart-item-price">$18.00</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn">−</button>
+        <span class="qty-val">2</span>
+        <button class="qty-btn">+</button>
+      </div>
+    </div>
+    <div class="cart-item" style="border-radius:0 0 10px 10px">
+      <div class="cart-item-info">
+        <div class="cart-item-name">Chips (Large)</div>
+        <div class="cart-item-custom">Chicken salt</div>
+        <div class="cart-item-price">$6.00</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn">−</button>
+        <span class="qty-val">1</span>
+        <button class="qty-btn">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Add a drink?</div>
+  <div class="add-drink-grid">
+    <div class="drink-card"><div class="drink-name">Coke 330ml</div><div class="drink-price">$3.50</div></div>
+    <div class="drink-card"><div class="drink-name">Sprite 330ml</div><div class="drink-price">$3.50</div></div>
+    <div class="drink-card"><div class="drink-name">Water 600ml</div><div class="drink-price">$2.50</div></div>
+  </div>
+
+  <div class="cart-summary">
+    <div class="summary-row"><span>Subtotal</span><span>$56.50</span></div>
+    <div class="summary-row"><span>Delivery fee</span><span>$5.00</span></div>
+    <div class="summary-row"><span style="color:#555;font-size:12px">Promo code</span><span><input style="background:#0e0e0e;border:1px solid #333;color:#f59e0b;padding:4px 8px;border-radius:6px;font-size:12px;width:90px;font-family:inherit" placeholder="Enter code"/></span></div>
+    <div class="summary-row total"><span>Total</span><span class="val">$61.50</span></div>
+  </div>
+
+  <div class="cart-cta">
+    <button class="cta-btn">
+      <span>Proceed to Checkout</span>
+      <span>$61.50 →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ CHECKOUT PAGE ══════════ -->
+<div id="checkout-page" class="page" style="display:none;flex-direction:column;background:#0e0e0e;min-height:100vh;padding-bottom:100px">
+  <nav class="navbar"><span class="logo">TJ'S <span>KEBAB</span></span></nav>
+  <div class="page-header">
+    <button class="back-btn">←</button>
+    <span class="page-title">Checkout</span>
+  </div>
+
+  <div class="checkout-section" style="margin-top:20px">
+    <div class="checkout-section-title">Your details</div>
+    <div class="input-group">
+      <div class="input-row">
+        <input class="input-field" placeholder="First name"/>
+        <input class="input-field" placeholder="Last name"/>
+      </div>
+      <input class="input-field" placeholder="Phone number"/>
+      <input class="input-field" placeholder="Email address"/>
+    </div>
+  </div>
+
+  <div class="checkout-section">
+    <div class="checkout-section-title">Delivery address</div>
+    <div class="input-group">
+      <input class="input-field" placeholder="Street address"/>
+      <div class="input-row">
+        <input class="input-field" placeholder="Suburb"/>
+        <input class="input-field" placeholder="Postcode"/>
+      </div>
+      <textarea class="input-field" placeholder="Delivery instructions (optional)" rows="2" style="resize:none"></textarea>
+    </div>
+  </div>
+
+  <!-- PROMO SIGNUP BANNER -->
+  <div class="promo-signup">
+    <div class="promo-signup-header">
+      <span class="promo-icon">🎁</span>
+      <div>
+        <div class="promo-title">Get exclusive deals &amp; promo codes</div>
+        <div class="promo-sub">Sign up to receive specials, discounts &amp; new item alerts</div>
+      </div>
+    </div>
+    <div class="promo-channels">
+      <label class="promo-channel active"><input type="checkbox" checked/> Email</label>
+      <label class="promo-channel"><input type="checkbox"/> SMS</label>
+      <label class="promo-channel"><input type="checkbox"/> Push alerts</label>
+    </div>
+    <div class="promo-input-row">
+      <input class="promo-input" placeholder="your@email.com" style="flex:2"/>
+      <input class="promo-input" placeholder="+61 4xx xxx xxx"/>
+      <button class="promo-save-btn">Sign me up!</button>
+    </div>
+  </div>
+
+  <div class="checkout-section">
+    <div class="checkout-section-title">Payment method</div>
+    <div class="payment-options">
+      <div class="payment-option active">
+        <div class="payment-radio active"></div>
+        <div>
+          <div class="payment-label">💳 Card (online)</div>
+          <div class="payment-sub">Visa, Mastercard — secure payment</div>
+        </div>
+      </div>
+      <div class="payment-option">
+        <div class="payment-radio"></div>
+        <div>
+          <div class="payment-label">💵 Cash on delivery</div>
+          <div class="payment-sub">Pay when your order arrives</div>
+        </div>
+      </div>
+      <div class="payment-option">
+        <div class="payment-radio"></div>
+        <div>
+          <div class="payment-label">📱 Pay at counter</div>
+          <div class="payment-sub">For pickup orders only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="checkout-section">
+    <div style="background:#1a1a1a;border:1px solid #222;border-radius:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#888;margin-bottom:6px"><span>Subtotal</span><span>$56.50</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#888;margin-bottom:10px"><span>Delivery</span><span>$5.00</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:800"><span>Total</span><span style="color:#f59e0b">$61.50</span></div>
+    </div>
+  </div>
+
+  <div class="cart-cta">
+    <button class="cta-btn"><span>Place Order</span><span>$61.50 →</span></button>
+  </div>
+</div>
+
+<!-- ══════════ CONFIRMATION PAGE ══════════ -->
+<div id="confirm-page" class="page" style="display:none;flex-direction:column;background:#0e0e0e;min-height:100vh">
+  <nav class="navbar"><span class="logo">TJ'S <span>KEBAB</span></span></nav>
+  <div class="confirm-wrapper">
+    <div class="confirm-icon-ring">🥙</div>
+    <div class="confirm-title">Order Received!</div>
+    <div style="font-size:14px;color:#888">Estimated delivery: <strong style="color:#f59e0b">25–35 min</strong></div>
+    <div class="confirm-order-id">Order #TJ-2847 · June 27, 2026</div>
+
+    <div class="confirm-card" style="width:100%;max-width:360px">
+      <div class="confirm-card-row"><span>Chargrilled Doner Kebab</span><span>$14.50</span></div>
+      <div class="confirm-card-row"><span>Mixed Grill Wrap × 2</span><span>$36.00</span></div>
+      <div class="confirm-card-row"><span>Chips (Large)</span><span>$6.00</span></div>
+      <div class="confirm-card-row" style="font-weight:700;color:#f59e0b;font-size:15px"><span>Total paid</span><span>$61.50</span></div>
+    </div>
+
+    <div style="width:100%;max-width:360px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:14px;text-align:center">Order status</div>
+      <div class="status-track">
+        <div class="status-step active"><div class="status-dot done">✓</div><div class="status-line">Confirmed</div></div>
+        <div class="status-step active"><div class="status-dot done">👨‍🍳</div><div class="status-line">Preparing</div></div>
+        <div class="status-step"><div class="status-dot pending">📦</div><div class="status-line">Ready</div></div>
+        <div class="status-step"><div class="status-dot pending">🛵</div><div class="status-line">On Way</div></div>
+        <div class="status-step"><div class="status-dot pending">🎉</div><div class="status-line">Delivered</div></div>
+      </div>
+    </div>
+
+    <div style="background:#1a1a1a;border:1px solid #f59e0b22;border-radius:10px;padding:16px;width:100%;max-width:360px;text-align:left">
+      <div style="font-size:12px;color:#666;margin-bottom:4px">We'll notify you when your order is ready.</div>
+      <div style="font-size:13px;font-weight:700;color:#f5f5f5">📍 Delivering to: 42 King St, Sydney NSW 2000</div>
+    </div>
+
+    <button onclick="showPage('menu-page')" style="background:#f59e0b;color:#000;border:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px">Order Again</button>
+  </div>
+</div>
+
+<!-- ══════════ DEMO TABS ══════════ -->
+<div class="demo-tabs">
+  <button class="demo-tab active" onclick="showPage('menu-page')">MENU</button>
+  <button class="demo-tab" onclick="showPage('cart-page')">CART</button>
+  <button class="demo-tab" onclick="showPage('checkout-page')">CHECKOUT</button>
+  <button class="demo-tab" onclick="showPage('confirm-page')">CONFIRM</button>
+</div>
+
+<script>
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.getElementById(id).style.display='flex';
+  document.querySelectorAll('.demo-tab').forEach((t,i)=>{
+    const pages=['menu-page','cart-page','checkout-page','confirm-page'];
+    t.classList.toggle('active', pages[i]===id);
+  });
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.cat-pill').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('.cat-pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+document.querySelectorAll('.order-type-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.order-type-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+document.querySelectorAll('.payment-option').forEach(o=>{
+  o.addEventListener('click',()=>{
+    document.querySelectorAll('.payment-option').forEach(x=>{x.classList.remove('active');x.querySelector('.payment-radio').classList.remove('active');});
+    o.classList.add('active');o.querySelector('.payment-radio').classList.add('active');
+  });
+});
+document.querySelectorAll('.promo-channel').forEach(c=>{
+  c.addEventListener('click',()=>c.classList.toggle('active'));
+});
+</script>
+</body>
+</html>
