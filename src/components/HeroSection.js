@@ -1,56 +1,68 @@
 import React from 'react';
-import { cn } from '../lib/utils';
+import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import { HERO_PHOTO } from '../data/menu';
 
 export default function HeroSection({ onCtaClick }) {
   return (
-    <div className="relative h-[420px] md:h-[480px] overflow-hidden flex items-center justify-center text-center">
-      {/* Ken-burns background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center animate-kenburns"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=1600&auto=format&q=80')`,
-        }}
+    <section className="relative w-full h-[56vw] max-h-[520px] min-h-[280px] overflow-hidden">
+      {/* Background photo */}
+      <img
+        src={HERO_PHOTO}
+        alt="TJ's Kebab Centre"
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="eager"
       />
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#111111]" />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface/70 via-surface/50 to-surface" />
+      <div className="absolute inset-0 bg-gradient-to-r from-surface/60 to-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 px-6 py-16 max-w-2xl mx-auto">
-        {/* Badge */}
-        <div className="inline-block mb-5 px-5 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 text-amber-400 text-xs font-bold tracking-widest uppercase">
-          Bundoora's Finest · Halal Certified
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-3">
-          TJ's Kebab<br />
-          <span className="text-amber-400">Centre</span>
-        </h1>
-
-        <p className="text-white/80 text-base mb-8 leading-relaxed">
-          Real Flavour. Real Food.<br />
-          Fresh Chargrilled Halal Kebabs.
-        </p>
-
-        {/* Badges row */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8">
-          {['Halal Certified', 'Bundoora VIC', 'Fresh Daily', 'Pickup Ready'].map(b => (
-            <span key={b} className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-semibold">
-              {b}
-            </span>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <button
-          onClick={onCtaClick}
-          className="px-10 py-4 bg-amber-500 hover:bg-amber-400 text-charcoal-900 font-extrabold text-base rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{ color: '#111111' }}
+      <div className="relative h-full flex flex-col justify-center px-6 md:px-12 max-w-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
         >
-          ORDER NOW →
-        </button>
+          <span className="inline-block text-brand font-bold text-xs tracking-[3px] uppercase mb-3 border border-brand/40 px-3 py-1 rounded-full">
+            Real Flavour · Real Good
+          </span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="font-display text-5xl sm:text-7xl md:text-8xl text-white leading-none tracking-wide mb-4"
+        >
+          TJ'S<br />
+          <span className="text-brand">KEBAB</span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="text-muted text-sm sm:text-base mb-6 max-w-sm leading-relaxed"
+        >
+          Chargrilled meats, homemade sauces &amp; fresh salads — made to order. Pickup only.
+        </motion.p>
+
+        <motion.button
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
+          onClick={onCtaClick}
+          className="flex items-center gap-2 bg-brand text-surface font-black text-sm tracking-wide px-6 py-3 rounded-xl w-fit hover:bg-brand-lit transition-all active:scale-95 shadow-lg shadow-brand/20"
+        >
+          ORDER NOW
+          <ChevronDown size={16} strokeWidth={3} />
+        </motion.button>
       </div>
-    </div>
+
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface to-transparent" />
+    </section>
   );
 }
