@@ -1,73 +1,44 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { CATEGORIES } from '../data/menu';
 
 export function useMenu() {
   const [menuItems, setMenuItems] = useState([]);
-  const [drinks, setDrinks] = useState([]);
-  const [promotions, setPromotions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [drinks,    setDrinks]    = useState([]);
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
-    // Simple query - no compound index needed
-    const menuQ = query(collection(db, 'menuItems'));
-    const unsubMenu = onSnapshot(menuQ, (snap) => {
-      const all = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(item => item.available !== false)
-        .sort((a, b) => (a.categoryOrder || 0) - (b.categoryOrder || 0) || (a.order || 0) - (b.order || 0));
-      const seen = new Set();
-      const items = all.filter(item => {
-        const key = `${item.category}__${item.name}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      setMenuItems(items);
-      setLoading(false);
-    }, (err) => {
-      console.error('Menu error:', err);
-      setLoading(false);
-    });
-
-    const unsubDrinks = onSnapshot(collection(db, 'drinks'), (snap) => {
-      setDrinks(snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(d => d.available !== false)
-        .sort((a, b) => (a.order || 0) - (b.order || 0)));
-    });
-
-    const unsubPromo = onSnapshot(collection(db, 'promotions'), (snap) => {
-      setPromotions(snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(p => p.active === true));
-    });
-
-    return () => { unsubMenu(); unsubDrinks(); unsubPromo(); };
+    const unsubs = [
+      onSnapshot(
+        query(collection(db, 'menuItems'), orderBy('categoryOrder'), orderBy('order')),
+        (snap) => {
+          setMenuItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i) => i.available !== false));
+          setLoading(false);
+        },
+        (err) => {
+          console.error('Menu error:', err);
+          setLoading(false);
+        }
+      ),
+      onSnapshot(
+        query(collection(db, 'drinks'), orderBy('order')),
+        (snap) => setDrinks(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((d) => d.available !== false)),
+        (err) => console.error('Drinks error:', err)
+      ),
+    ];
+    return () => unsubs.forEach((u) => u());
   }, []);
 
-  // Group items by category
-  const categories = menuItems.reduce((acc, item) => {
-    const key = item.category;
-    if (!acc[key]) {
-      acc[key] = {
-        id: key,
-        name: item.categoryName,
-        emoji: item.categoryEmoji,
-        order: item.categoryOrder,
-        hasSalad: item.hasSalad,
-        hasSauce: item.hasSauce,
-        hasExtras: item.hasExtras,
-        items: []
-      };
-    }
-    acc[key].items.push(item);
-    return acc;
-  }, {});
+  // Build ordered category list with items attached — CATEGORIES is canonical for order/metadata
+  const categories = CATEGORIES.map((cat) => ({
+    ...cat,
+    items: cat.id === 'drinks'
+      ? drinks
+      : menuItems.filter((item) => item.categoryId === cat.id),
+  })).filter((cat) => cat.items.length > 0);
 
-  const sortedCategories = Object.values(categories).sort((a, b) => a.order - b.order);
-
-  return { categories: sortedCategories, drinks, promotions, loading };
+  return { categories, loading };
 }
 
 export function useOrders() {

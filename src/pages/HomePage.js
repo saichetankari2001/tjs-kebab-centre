@@ -1,99 +1,87 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useMenu } from '../hooks/useMenu';
+import { useCart } from '../context/CartContext';
 import HeroSection from '../components/HeroSection';
-import PromoSignupBanner from '../components/PromoSignupBanner';
 import CategoryNav from '../components/CategoryNav';
-import MenuGrid from '../components/MenuGrid';
+import MenuSection from '../components/MenuSection';
 import CartBar from '../components/CartBar';
+import PromoSignupBanner from '../components/PromoSignupBanner';
 
 export default function HomePage() {
-  const { categories, drinks, promotions, loading } = useMenu();
-  const [activeCatId, setActiveCatId] = useState(null);
-  const categoryRefs = useRef({});
+  const { categories, loading } = useMenu();
+  const { addItem } = useCart();
+  const [activeCatId,  setActiveCatId]  = useState(null);
+  const sectionRefs  = useRef({});
   const scrollingRef = useRef(false);
 
-  const firstCatId = categories[0]?.id;
-  const displayActiveCat = activeCatId || firstCatId;
-
-  // IntersectionObserver — highlight active category as user scrolls
+  // IntersectionObserver — highlight active category pill while scrolling
   useEffect(() => {
     if (!categories.length) return;
     const observers = [];
-    categories.forEach(cat => {
-      const el = categoryRefs.current[cat.id];
+    categories.forEach(({ id }) => {
+      const el = sectionRefs.current[id];
       if (!el) return;
       const obs = new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting && !scrollingRef.current) {
-            setActiveCatId(cat.id);
-          }
+          if (entry.isIntersecting && !scrollingRef.current) setActiveCatId(id);
         },
-        { rootMargin: '-80px 0px -55% 0px', threshold: 0 }
+        { rootMargin: '-112px 0px -55% 0px', threshold: 0 }
       );
       obs.observe(el);
       observers.push(obs);
     });
-    return () => observers.forEach(o => o.disconnect());
+    return () => observers.forEach((o) => o.disconnect());
   }, [categories]);
 
   const scrollToCategory = (catId) => {
     setActiveCatId(catId);
-    const el = categoryRefs.current[catId];
+    const el = sectionRefs.current[catId];
     if (!el) return;
     scrollingRef.current = true;
-    const NAVBAR_H = 64;
-    const CATNAV_H = 52;
-    const top = el.getBoundingClientRect().top + window.scrollY - NAVBAR_H - CATNAV_H;
+    const OFFSET = 64 + 48 + 16; // navbar + catNav + padding
+    const top = el.getBoundingClientRect().top + window.scrollY - OFFSET;
     window.scrollTo({ top, behavior: 'smooth' });
     setTimeout(() => { scrollingRef.current = false; }, 900);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111111] flex items-center justify-center">
-        <div className="text-amber-500 text-lg font-semibold animate-pulse">Loading menu...</div>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <motion.div
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="text-brand font-display text-2xl tracking-wider"
+        >
+          LOADING MENU...
+        </motion.div>
       </div>
     );
   }
 
-  // Build category list for nav (include Drinks if present)
-  const navCategories = [
-    ...categories,
-    ...(drinks.length > 0 ? [{ id: 'drinks', name: 'Drinks', emoji: '🥤' }] : []),
-  ];
+  const activeId = activeCatId || categories[0]?.id;
 
   return (
-    <div className="bg-[#111111] min-h-screen">
+    <div className="bg-surface min-h-screen pb-24">
       <PromoSignupBanner />
-
-      {/* Promotions banner (if any) */}
-      {promotions.length > 0 && (
-        <div className="px-4 pt-4 space-y-2">
-          {promotions.map(promo => (
-            <div key={promo.id} className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
-              <span className="text-2xl">{promo.emoji || '🎉'}</span>
-              <div>
-                <p className="text-amber-400 font-bold text-sm">{promo.title}</p>
-                <p className="text-amber-400/70 text-xs">{promo.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <HeroSection onCtaClick={() => scrollToCategory(firstCatId)} />
-
+      <HeroSection onCtaClick={() => scrollToCategory(categories[0]?.id)} />
       <CategoryNav
-        categories={navCategories}
-        activeCatId={displayActiveCat}
+        categories={categories}
+        activeCatId={activeId}
         onCategoryClick={scrollToCategory}
       />
 
-      <MenuGrid
-        categories={categories}
-        drinks={drinks}
-        categoryRefs={categoryRefs}
-      />
+      <div className="max-w-3xl mx-auto px-3 pt-4">
+        {categories.map((cat) => (
+          <MenuSection
+            key={cat.id}
+            category={cat}
+            items={cat.items}
+            sectionRef={(el) => { sectionRefs.current[cat.id] = el; }}
+            onAdd={addItem}
+          />
+        ))}
+      </div>
 
       <CartBar />
     </div>
