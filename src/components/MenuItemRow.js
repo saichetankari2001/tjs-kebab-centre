@@ -2,14 +2,20 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
+const itemVariant = {
+  hidden:  { opacity: 0, x: -12 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+};
+
 export default function MenuItemRow({ item, onAdd }) {
   const displayPrice = item.saladPrice ?? item.price;
 
   return (
     <motion.div
-      whileHover={{ x: 2 }}
+      variants={itemVariant}
+      whileHover={{ x: 3, backgroundColor: 'rgba(245,158,11,0.04)' }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="flex items-center gap-4 py-4 px-4 border-b border-border last:border-0 cursor-pointer hover:bg-card2/40 transition-colors group"
+      className="flex items-center gap-4 py-4 px-4 border-b border-border last:border-0 cursor-pointer transition-colors group"
       onClick={() => onAdd(item)}
     >
       {/* Text */}

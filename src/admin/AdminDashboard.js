@@ -69,14 +69,6 @@ export default function AdminDashboard() {
     } catch (e) { alert('Error: ' + e.message); }
   };
 
-  const STATUS_MESSAGES = {
-    confirmed: { title: "Order Confirmed! ✅", body: "TJ's Kebab received your order. We're on it!" },
-    preparing: { title: "Being Prepared 👨‍🍳", body: "Our chefs are cooking your food right now!" },
-    ready: { title: "Ready! 🥙", body: "Your order is ready for pickup/delivery!" },
-    picked: { title: "On the Way! 🛵", body: "Your driver has picked up your order!" },
-    delivered: { title: "Delivered! 🎉", body: "Your order has arrived. Enjoy your meal!" },
-  };
-
   const updateOrderStatus = async (id, status) => {
     await updateDoc(doc(db, 'orders', id), { status });
 
@@ -98,13 +90,25 @@ export default function AdminDashboard() {
       }
     }
 
-    // Send notification
+    // Send status-change email/SMS via backend (fire-and-forget)
     const order = orders.find(o => o.id === id);
-    if (order?.fcmToken && STATUS_MESSAGES[status]) {
-      const { title, body } = STATUS_MESSAGES[status];
-      try {
-        await addDoc(collection(db, 'notifications'), { token: order.fcmToken, title, body, orderId: id, createdAt: new Date().toISOString() });
-      } catch(e) { console.log('Notification error:', e); }
+    const notifyStatuses = ['confirmed', 'preparing', 'ready'];
+    if (order && notifyStatuses.includes(status)) {
+      const email = order.customerEmail || order.customer?.email;
+      const phone = order.customerPhone || order.customer?.phone;
+      if (email || phone) {
+        fetch(`${API_URL}/api/notify/order-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to:        email  ?? null,
+            phone:     phone  ?? null,
+            firstName: order.customer?.firstName || order.customerName?.split(' ')[0] || 'there',
+            orderId:   id,
+            status,
+          }),
+        }).catch(() => {});
+      }
     }
   };
 

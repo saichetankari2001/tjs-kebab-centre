@@ -1,6 +1,6 @@
 // Category metadata and stock photo URLs (Unsplash — no API key required)
 export const HERO_PHOTO =
-  'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=1400&q=80';
+  'https://images.unsplash.com/photo-1561043433-aaf687c4cf04?auto=format&fit=crop&w=1400&q=80';
 
 export const CATEGORIES = [
   {
@@ -19,13 +19,14 @@ export const CATEGORIES = [
     id: 'hsp',
     name: 'HSP',
     emoji: '🍟',
-    photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
+    // Halal Snack Pack — chips topped with doner meat in a takeaway box
+    photo: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'skewers',
     name: 'Skewers',
     emoji: '🍢',
-    photo: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'chips',
@@ -43,7 +44,7 @@ export const CATEGORIES = [
     id: 'loaded',
     name: 'Loaded Upgrade',
     emoji: '⚡',
-    photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'dips',
@@ -55,6 +56,6 @@ export const CATEGORIES = [
     id: 'drinks',
     name: 'Drinks',
     emoji: '🥤',
-    photo: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=800&q=80',
   },
 ];

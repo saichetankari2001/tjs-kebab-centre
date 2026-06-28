@@ -72,7 +72,6 @@ export default function OrderConfirmationPage() {
 
   // Loyalty stamp placeholder — Plan 2 will wire up real logic
   // For now we display "Order 1 of 5 for your FREE kebab!"
-  const stampCount = order?.stamps ?? 1;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center px-4 py-10 gap-7 text-center animate-fadeIn">
