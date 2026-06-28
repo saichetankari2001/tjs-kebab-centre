@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { signOut } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, orderBy, increment } from 'firebase/firestore';
+import QRCode from 'react-qr-code';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
 
-const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code', '📢 Blast'];
+const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code', '📢 Blast', '📬 Subscribers'];
 
 const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
 
@@ -25,6 +26,8 @@ export default function AdminDashboard() {
   const [blastChannels, setBlastChannels] = useState(['email']);
   const [blasting, setBlasting] = useState(false);
   const [blastResult, setBlastResult] = useState(null);
+  const [subscribers, setSubscribers] = useState([]);
+  const priceTimers = useRef({});
 
   useEffect(() => {
     const unsubs = [
@@ -32,6 +35,7 @@ export default function AdminDashboard() {
       onSnapshot(query(collection(db, 'orders'), orderBy('createdAt', 'desc')), snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       onSnapshot(collection(db, 'promotions'), snap => setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       onSnapshot(query(collection(db, 'drinks'), orderBy('order')), snap => setDrinks(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+      onSnapshot(collection(db, 'subscribers'), snap => setSubscribers(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
@@ -110,6 +114,36 @@ export default function AdminDashboard() {
         }).catch(() => {});
       }
     }
+  };
+
+  // ── Inline price editing (debounced 800ms) ──────────────────────────
+  const handlePriceChange = (id, newPrice) => {
+    setMenuItems(prev => prev.map(item => item.id === id ? { ...item, price: parseFloat(newPrice) || item.price } : item));
+    clearTimeout(priceTimers.current[id]);
+    priceTimers.current[id] = setTimeout(async () => {
+      const parsed = parseFloat(newPrice);
+      if (!isNaN(parsed) && parsed > 0) await updateDoc(doc(db, 'menuItems', id), { price: parsed });
+    }, 800);
+  };
+
+  const handleBowlPriceChange = (id, field, newPrice) => {
+    setMenuItems(prev => prev.map(item => item.id === id ? { ...item, [field]: parseFloat(newPrice) || item[field] } : item));
+    clearTimeout(priceTimers.current[`${id}_${field}`]);
+    priceTimers.current[`${id}_${field}`] = setTimeout(async () => {
+      const parsed = parseFloat(newPrice);
+      if (!isNaN(parsed) && parsed > 0) await updateDoc(doc(db, 'menuItems', id), { [field]: parsed });
+    }, 800);
+  };
+
+  const handleSizePriceChange = (id, size, newPrice) => {
+    setMenuItems(prev => prev.map(item =>
+      item.id === id ? { ...item, sizePrices: { ...item.sizePrices, [size]: parseFloat(newPrice) || item.sizePrices?.[size] } } : item
+    ));
+    clearTimeout(priceTimers.current[`${id}_size_${size}`]);
+    priceTimers.current[`${id}_size_${size}`] = setTimeout(async () => {
+      const parsed = parseFloat(newPrice);
+      if (!isNaN(parsed) && parsed > 0) await updateDoc(doc(db, 'menuItems', id), { [`sizePrices.${size}`]: parsed });
+    }, 800);
   };
 
   const toggleItem = async (id, available) => {
@@ -234,39 +268,97 @@ export default function AdminDashboard() {
         {/* MENU */}
         {tab === 1 && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 700 }}>Menu Items ({menuItems.length})</h2>
-              <button onClick={() => setShowAddItem(true)} style={{ background: 'var(--brand)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: 14, boxShadow: 'var(--shadow-glow)' }}>+ Add Item</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Menu Items ({menuItems.length})</h2>
+              <button onClick={() => setShowAddItem(true)} style={{ background: 'var(--brand)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>+ Add Item</button>
             </div>
-            {['signature-bowls','kebab-wraps','hsp','skewers-burgers','falafel'].map(cat => {
-              const catItems = menuItems.filter(m => m.category === cat);
-              if (!catItems.length) return null;
-              return (
-                <div key={cat} style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                    {catItems[0]?.categoryEmoji} {catItems[0]?.categoryName}
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {catItems.map(item => (
-                      <div key={item.id} style={{ background: 'var(--card)', border: `1px solid ${item.available ? 'var(--border)' : 'rgba(226,75,74,0.3)'}`, borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <p style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, letterSpacing: 0.5, marginBottom: 20, background: '#16a34a22', border: '1px solid #16a34a44', display: 'inline-block', padding: '3px 10px', borderRadius: 100 }}>
+              LIVE — price changes save automatically and reflect instantly in the customer menu
+            </p>
+
+            {/* Group items by category using live Firestore data */}
+            {Object.entries(
+              menuItems.reduce((acc, item) => {
+                const cat = item.category || 'Other';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(item);
+                return acc;
+              }, {})
+            ).map(([cat, catItems]) => (
+              <div key={cat} style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                  {catItems[0]?.emoji ?? ''} {cat}
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {catItems.map(item => (
+                    <div key={item.id} style={{ background: 'var(--card)', border: `1px solid ${item.available ? 'var(--border)' : 'rgba(226,75,74,0.3)'}`, borderRadius: 'var(--radius)', padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, fontSize: 14, color: item.available ? 'var(--text)' : 'var(--muted)', marginBottom: 2 }}>{item.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{item.description?.slice(0, 60)}...</div>
+                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{item.description?.slice(0, 70)}</div>
                         </div>
-                        <div style={{ fontFamily: 'Playfair Display', fontSize: 18, fontWeight: 700, color: 'var(--brand)', minWidth: 55 }}>${item.price?.toFixed(2)}</div>
+
+                        {/* Inline price input */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ color: '#9ca3af', fontSize: 12 }}>$</span>
+                          <input
+                            type="number" min="0" step="0.50"
+                            value={item.price ?? ''}
+                            onChange={e => handlePriceChange(item.id, e.target.value)}
+                            title="Edit price — saves automatically"
+                            style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '4px 6px', borderRadius: 6, fontSize: 14, fontWeight: 700, width: 68, textAlign: 'right', outline: 'none' }}
+                            onFocus={e => e.target.style.borderColor = '#f59e0b'}
+                            onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+                          />
+                        </div>
+
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                          <button onClick={() => toggleItem(item.id, item.available)} style={{ background: item.available ? 'rgba(76,175,80,0.15)' : 'rgba(226,75,74,0.15)', border: `1px solid ${item.available ? 'rgba(76,175,80,0.4)' : 'rgba(226,75,74,0.4)'}`, color: item.available ? 'var(--green)' : '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                          <button onClick={() => toggleItem(item.id, item.available)} style={{ background: item.available ? 'rgba(76,175,80,0.15)' : 'rgba(226,75,74,0.15)', border: `1px solid ${item.available ? 'rgba(76,175,80,0.4)' : 'rgba(226,75,74,0.4)'}`, color: item.available ? 'var(--green)' : '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                             {item.available ? '✓ On' : '✗ Off'}
                           </button>
-                          <button onClick={() => setEditItem(item)} style={{ background: 'rgba(240,165,0,0.1)', border: '1px solid rgba(240,165,0,0.3)', color: 'var(--gold)', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>Edit</button>
-                          <button onClick={() => deleteItem(item.id)} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid rgba(226,75,74,0.3)', color: '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>Del</button>
+                          <button onClick={() => setEditItem(item)} style={{ background: 'rgba(240,165,0,0.1)', border: '1px solid rgba(240,165,0,0.3)', color: 'var(--gold)', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
+                          <button onClick={() => deleteItem(item.id)} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid rgba(226,75,74,0.3)', color: '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Del</button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Bowl sub-prices */}
+                      {item.itemType === 'bowl' && (
+                        <div style={{ display: 'flex', gap: 12, marginTop: 8, paddingTop: 8, borderTop: '1px solid #222' }}>
+                          {[['saladPrice', 'Salad'], ['ricePrice', 'Rice']].map(([field, label]) => (
+                            <label key={field} style={{ color: '#9ca3af', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {label} $
+                              <input type="number" min="0" step="0.50" value={item[field] ?? item.price ?? ''}
+                                onChange={e => handleBowlPriceChange(item.id, field, e.target.value)}
+                                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '3px 5px', borderRadius: 5, fontSize: 12, width: 52, outline: 'none' }}
+                                onFocus={e => e.target.style.borderColor = '#f59e0b'}
+                                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* HSP / Chips size prices */}
+                      {item.sizePrices && (
+                        <div style={{ display: 'flex', gap: 10, marginTop: 8, paddingTop: 8, borderTop: '1px solid #222', flexWrap: 'wrap' }}>
+                          {Object.entries(item.sizePrices).map(([size, price]) => (
+                            <label key={size} style={{ color: '#9ca3af', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {size} $
+                              <input type="number" min="0" step="1" value={price ?? ''}
+                                onChange={e => handleSizePriceChange(item.id, size, e.target.value)}
+                                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '3px 5px', borderRadius: 5, fontSize: 12, width: 50, outline: 'none' }}
+                                onFocus={e => e.target.style.borderColor = '#f59e0b'}
+                                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -311,20 +403,30 @@ export default function AdminDashboard() {
         {/* QR CODE */}
         {tab === 6 && (
           <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>📱 Menu QR Code</h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 20 }}>Print this and place it on tables or the counter — customers scan to view your menu and order online.</p>
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Website URL</label>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>📱 QR Code</h2>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16 }}>Display at the counter — customers scan to order online.</p>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Order URL</label>
               <input value={qrUrl} onChange={e => setQrUrl(e.target.value)} style={{ width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
             </div>
-            <div style={{ background: '#fff', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, border: '1px solid var(--border)', marginBottom: 16 }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(qrUrl)}`} alt="Menu QR Code" style={{ width: 280, height: 280, borderRadius: 8 }} />
-              <div style={{ fontWeight: 800, fontSize: 16, color: '#1A2E1F' }}>TJ's Kebab Centre</div>
-              <div style={{ fontSize: 12, color: '#7A9483' }}>Scan to view our menu & place an order online</div>
+            <div id="qr-print-area" style={{ background: '#fff', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <QRCode value={qrUrl} size={220} />
+              <div style={{ fontFamily: 'Arial', fontWeight: 900, fontSize: 18, color: '#111', letterSpacing: 2 }}>TJ'S KEBAB CENTRE</div>
+              <div style={{ fontFamily: 'Arial', fontSize: 12, color: '#555' }}>Scan to view menu &amp; order online</div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => window.print()} style={{ flex: 1, background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>🖨️ Print</button>
-              <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(qrUrl)}`} download="tjs-menu-qr.png" target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 15, textAlign: 'center', textDecoration: 'none' }}>⬇️ Download</a>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('qr-print-area');
+                  const w = window.open('', '_blank', 'width=420,height=480');
+                  w.document.write(`<html><body style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh">${el.outerHTML}</body></html>`);
+                  w.document.close(); w.print();
+                }}
+                style={{ flex: 1, background: 'var(--brand)', color: '#000', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+              >🖨️ Print QR</button>
+              <a href="/menu-card" target="_blank" rel="noopener noreferrer"
+                style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 14, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >📄 Print Menu Card</a>
             </div>
           </div>
         )}
@@ -457,6 +559,55 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+        {/* SUBSCRIBERS */}
+        {tab === 8 && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ color: 'var(--brand)', margin: 0, fontSize: 20, fontWeight: 700 }}>📬 Promo Subscribers ({subscribers.length})</h3>
+              <button
+                onClick={() => {
+                  const csv = ['Email,Phone,Channels,Date', ...subscribers.map(s =>
+                    `"${s.email ?? ''}","${s.phone ?? ''}","${(s.channels ?? []).join('+')}","${s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? ''}"`
+                  )].join('\n');
+                  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'subscribers.csv' });
+                  a.click();
+                }}
+                style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--muted)', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >Export CSV</button>
+            </div>
+
+            {subscribers.length === 0 ? (
+              <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No subscribers yet — the promo banner on the menu page drives sign-ups.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Email', 'Phone', 'Channels', 'Signed Up'].map(h => (
+                      <th key={h} style={{ color: 'var(--muted)', textAlign: 'left', padding: '8px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscribers.map(s => (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
+                      <td style={{ padding: '9px 12px', color: 'var(--text)' }}>{s.email ?? '—'}</td>
+                      <td style={{ padding: '9px 12px', color: 'var(--text)' }}>{s.phone ?? '—'}</td>
+                      <td style={{ padding: '9px 12px' }}>
+                        {(s.channels ?? []).map(ch => (
+                          <span key={ch} style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--brand)', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, marginRight: 4 }}>{ch.toUpperCase()}</span>
+                        ))}
+                      </td>
+                      <td style={{ padding: '9px 12px', color: 'var(--muted)', fontSize: 12 }}>
+                        {s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
 
       {/* Modals */}
       {(showAddItem || editItem) && <ItemModal item={editItem} onClose={() => { setShowAddItem(false); setEditItem(null); }} />}

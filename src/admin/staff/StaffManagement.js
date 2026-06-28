@@ -1,172 +1,161 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 
+const CARD = { background: '#1b1509', border: '1px solid #332810', borderRadius: 12, padding: '16px 18px', marginBottom: 12 };
+
 export default function StaffManagement() {
-  const [staff, setStaff] = useState([]);
-  const [timesheets, setTimesheets] = useState([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', role: 'Staff', pin: '' });
-  const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('staff');
+  const [staff,    setStaff]    = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [addForm,  setAddForm]  = useState({ name: '', email: '', role: 'Team Member', pin: '' });
+  const [adding,   setAdding]   = useState(false);
+  const [filterDate, setFilterDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'timesheets'
 
   useEffect(() => {
-    const unsub1 = onSnapshot(collection(db, 'staff'), snap =>
-      setStaff(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsub2 = onSnapshot(query(collection(db, 'timesheets'), orderBy('clockIn', 'desc')), snap =>
-      setTimesheets(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => { unsub1(); unsub2(); };
+    const unsub = onSnapshot(query(collection(db, 'staff'), orderBy('name')), snap =>
+      setStaff(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return unsub;
   }, []);
 
-  const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
+  useEffect(() => {
+    if (activeTab !== 'timesheets') return;
+    const startOfDay = new Date(filterDate + 'T00:00:00');
+    const endOfDay   = new Date(filterDate + 'T23:59:59');
+    getDocs(
+      query(collection(db, 'staffSessions'), where('clockIn', '>=', startOfDay), where('clockIn', '<=', endOfDay))
+    ).then(snap => setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+  }, [filterDate, activeTab]);
 
-  const addStaff = async () => {
-    if (!form.name || !form.pin) return;
-    setSaving(true);
-    await addDoc(collection(db, 'staff'), { ...form, active: true, createdAt: new Date().toISOString() });
-    setForm({ name: '', role: 'Staff', pin: '' });
-    setShowAdd(false);
-    setSaving(false);
+  const addStaff = async (e) => {
+    e.preventDefault(); setAdding(true);
+    await addDoc(collection(db, 'staff'), { ...addForm, createdAt: new Date().toISOString() });
+    setAddForm({ name: '', email: '', role: 'Team Member', pin: '' });
+    setAdding(false);
   };
 
-  const toggleStaff = async (id, active) => {
-    await updateDoc(doc(db, 'staff', id), { active: !active });
+  const removeStaff = async (id) => {
+    if (!window.confirm('Remove this staff member?')) return;
+    await deleteDoc(doc(db, 'staff', id));
   };
 
-  const deleteStaff = async (id) => {
-    if (window.confirm('Remove this staff member?')) await deleteDoc(doc(db, 'staff', id));
+  const toggleActive = async (id, current) =>
+    updateDoc(doc(db, 'staff', id), { active: !current });
+
+  // Group sessions by staff for timesheet summary
+  const byStaff = sessions.reduce((acc, s) => {
+    const key = s.staffName ?? s.staffEmail ?? s.staffId;
+    if (!acc[key]) acc[key] = { sessions: [], totalHours: 0 };
+    acc[key].sessions.push(s);
+    acc[key].totalHours += s.hoursWorked ?? 0;
+    return acc;
+  }, {});
+
+  const exportCSV = () => {
+    const rows = [['Name', 'Clock In', 'Clock Out', 'Hours']];
+    sessions.forEach(s => {
+      rows.push([
+        s.staffName ?? s.staffEmail ?? '',
+        s.clockIn?.toDate?.()?.toLocaleString?.('en-AU') ?? '',
+        s.clockOut ? new Date(s.clockOut).toLocaleString('en-AU') : 'Active',
+        s.hoursWorked?.toFixed?.(2) ?? '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+      download: `timesheets-${filterDate}.csv`,
+    });
+    a.click();
   };
 
-  const formatTime = (ts) => {
-    if (!ts) return '—';
-    const d = ts.toDate?.() || new Date(ts);
-    return d.toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const S = {
+    tab: (active) => ({
+      background: active ? '#f59e0b' : 'transparent',
+      color: active ? '#000' : '#9c8a72',
+      border: active ? 'none' : '1px solid #332810',
+      padding: '7px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    }),
+    input: { background: '#111', border: '1px solid #332810', color: '#f0ead8', padding: '9px 12px', borderRadius: 7, fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' },
   };
-
-  const calcHours = (clockIn, clockOut) => {
-    if (!clockIn || !clockOut) return null;
-    const i = clockIn.toDate?.() || new Date(clockIn);
-    const o = clockOut.toDate?.() || new Date(clockOut);
-    return ((o - i) / 1000 / 60 / 60).toFixed(1);
-  };
-
-  const inp = { width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none' };
-
-  const todayShifts = timesheets.filter(t => {
-    const d = t.clockIn?.toDate?.() || new Date(t.clockIn || 0);
-    return d.toDateString() === new Date().toDateString();
-  });
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {[['staff', '👥 Staff'], ['timesheets', '🕐 Timesheets']].map(([id, label]) => (
-          <button key={id} onClick={() => setActiveTab(id)} style={{ background: activeTab === id ? 'var(--brand)' : 'var(--card)', border: `1px solid ${activeTab === id ? 'var(--brand)' : 'var(--border)'}`, color: activeTab === id ? '#fff' : 'var(--text2)', padding: '8px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>{label}</button>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>👥 Staff</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setActiveTab('roster')} style={S.tab(activeTab === 'roster')}>Roster</button>
+          <button onClick={() => setActiveTab('timesheets')} style={S.tab(activeTab === 'timesheets')}>Timesheets</button>
+        </div>
       </div>
 
-      {activeTab === 'staff' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700 }}>Staff Members ({staff.length})</h3>
-            <button onClick={() => setShowAdd(true)} style={{ background: 'var(--brand)', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}>+ Add Staff</button>
-          </div>
+      {/* ── ROSTER ── */}
+      {activeTab === 'roster' && <>
+        <div style={{ ...CARD, marginBottom: 20 }}>
+          <p style={{ color: '#9c8a72', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>Add Staff Member</p>
+          <form onSubmit={addStaff} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <input placeholder="Full name" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} required style={S.input} />
+            <input placeholder="Email (for staff portal login)" value={addForm.email} onChange={e => setAddForm(p => ({ ...p, email: e.target.value }))} type="email" required style={S.input} />
+            <select value={addForm.role} onChange={e => setAddForm(p => ({ ...p, role: e.target.value }))} style={{ ...S.input, cursor: 'pointer' }}>
+              {['Team Member', 'Shift Leader', 'Manager'].map(r => <option key={r}>{r}</option>)}
+            </select>
+            <button type="submit" disabled={adding} style={{ background: '#f59e0b', color: '#000', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+              {adding ? 'Adding...' : '+ Add'}
+            </button>
+          </form>
+          <p style={{ color: '#4a4030', fontSize: 11, marginTop: 8 }}>
+            Staff use their email + password to log into the Staff Portal (/staff) to clock in/out. Set their password through Firebase Auth.
+          </p>
+        </div>
 
-          {/* Today's active shifts */}
-          {todayShifts.filter(t => !t.clockOut).length > 0 && (
-            <div style={{ background: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 8 }}>🟢 Currently On Shift</div>
-              {todayShifts.filter(t => !t.clockOut).map(t => (
-                <div key={t.id} style={{ fontSize: 13, color: 'var(--text2)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{t.employeeName}</span>
-                  <span style={{ color: 'var(--muted)' }}>Since {formatTime(t.clockIn)}</span>
-                </div>
-              ))}
+        {staff.length === 0 && <p style={{ color: '#9c8a72', textAlign: 'center', padding: '30px 0' }}>No staff added yet.</p>}
+        {staff.map(s => (
+          <div key={s.id} style={{ ...CARD, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#251e0e', border: '1px solid #332810', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#f59e0b', fontSize: 15, flexShrink: 0 }}>
+              {s.name?.charAt(0)?.toUpperCase()}
             </div>
-          )}
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#f0ead8', fontWeight: 700, fontSize: 14 }}>{s.name}</div>
+              <div style={{ color: '#9c8a72', fontSize: 12 }}>{s.role} · {s.email}</div>
+            </div>
+            <button onClick={() => toggleActive(s.id, s.active)} style={{ background: s.active !== false ? 'rgba(74,222,128,0.1)' : 'rgba(226,75,74,0.1)', border: `1px solid ${s.active !== false ? '#16a34a44' : '#ef444444'}`, color: s.active !== false ? '#4ade80' : '#f87171', padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              {s.active !== false ? 'Active' : 'Inactive'}
+            </button>
+            <button onClick={() => removeStaff(s.id)} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid #ef444433', color: '#f87171', padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>✕</button>
+          </div>
+        ))}
+      </>}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {staff.map(emp => (
-              <div key={emp.id} style={{ background: 'var(--card)', border: `1px solid ${emp.active ? 'var(--border)' : 'rgba(226,75,74,0.2)'}`, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 44, height: 44, background: emp.active ? 'rgba(232,65,10,0.15)' : 'var(--card2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Playfair Display', fontSize: 16, fontWeight: 700, color: emp.active ? 'var(--brand)' : 'var(--muted)', flexShrink: 0 }}>
-                  {emp.name?.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: emp.active ? 'var(--text)' : 'var(--muted)', marginBottom: 2 }}>{emp.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{emp.role} · PIN: <span style={{ fontFamily: 'monospace', color: 'var(--gold)', letterSpacing: 2 }}>{emp.pin}</span></div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => toggleStaff(emp.id, emp.active)} style={{ background: emp.active ? 'rgba(76,175,80,0.1)' : 'rgba(226,75,74,0.1)', border: `1px solid ${emp.active ? 'rgba(76,175,80,0.3)' : 'rgba(226,75,74,0.3)'}`, color: emp.active ? 'var(--green)' : '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                    {emp.active ? '✓ Active' : '✗ Off'}
-                  </button>
-                  <button onClick={() => deleteStaff(emp.id)} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid rgba(226,75,74,0.3)', color: '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>Del</button>
-                </div>
+      {/* ── TIMESHEETS ── */}
+      {activeTab === 'timesheets' && <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+            style={{ background: '#111', border: '1px solid #332810', color: '#f0ead8', padding: '8px 12px', borderRadius: 7, fontSize: 13, outline: 'none' }} />
+          <button onClick={exportCSV} style={{ background: '#1b1509', border: '1px solid #332810', color: '#9c8a72', padding: '8px 16px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Export CSV</button>
+        </div>
+
+        {sessions.length === 0 && <p style={{ color: '#9c8a72', textAlign: 'center', padding: '30px 0' }}>No sessions on {filterDate}.</p>}
+
+        {Object.entries(byStaff).map(([name, { sessions: ss, totalHours }]) => (
+          <div key={name} style={CARD}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ color: '#f0ead8', fontWeight: 700 }}>{name}</span>
+              <span style={{ color: '#f59e0b', fontWeight: 800 }}>{totalHours.toFixed(2)}h total</span>
+            </div>
+            {ss.map(s => (
+              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#9c8a72', fontSize: 13, padding: '4px 0', borderTop: '1px solid #1a1a1a' }}>
+                <span>
+                  {s.clockIn?.toDate?.()?.toLocaleTimeString?.('en-AU', { hour: '2-digit', minute: '2-digit' }) ?? '—'}
+                  {' → '}
+                  {s.clockOut ? new Date(s.clockOut).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : <span style={{ color: '#4ade80' }}>Active</span>}
+                </span>
+                <span style={{ color: '#f0ead8' }}>{s.hoursWorked != null ? `${s.hoursWorked.toFixed(2)}h` : '...'}</span>
               </div>
             ))}
-            {staff.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No staff added yet — click "+ Add Staff" above</p>}
           </div>
-        </div>
-      )}
-
-      {activeTab === 'timesheets' && (
-        <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Timesheets</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {timesheets.map(log => {
-              const hours = calcHours(log.clockIn, log.clockOut);
-              return (
-                <div key={log.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 3 }}>{log.employeeName}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                      In: {formatTime(log.clockIn)} · Out: {log.clockOut ? formatTime(log.clockOut) : <span style={{ color: 'var(--green)' }}>Active</span>}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: 'Playfair Display', fontSize: 16, fontWeight: 700, color: hours ? 'var(--gold)' : 'var(--green)' }}>
-                      {hours ? `${hours}h` : 'On Shift'}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{log.date}</div>
-                  </div>
-                </div>
-              );
-            })}
-            {timesheets.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No timesheet records yet</p>}
-          </div>
-        </div>
-      )}
-
-      {showAdd && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAdd(false)}>
-          <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 400, padding: '24px 20px' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Add Staff Member</h2>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Full Name</label>
-              <input style={inp} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Ahmed Hassan" />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Role</label>
-              <select style={inp} value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
-                <option>Staff</option>
-                <option>Delivery Driver</option>
-                <option>Kitchen</option>
-                <option>Cashier</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>4-Digit PIN</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input style={{ ...inp, flex: 1, fontFamily: 'monospace', fontSize: 18, letterSpacing: 4 }} maxLength={4} value={form.pin} onChange={e => setForm(p => ({ ...p, pin: e.target.value.replace(/\D/g, '').slice(0,4) }))} placeholder="e.g. 1234" />
-                <button onClick={() => setForm(p => ({ ...p, pin: generatePin() }))} style={{ background: 'rgba(240,165,0,0.1)', border: '1px solid rgba(240,165,0,0.3)', color: 'var(--gold)', padding: '0 14px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>Generate</button>
-              </div>
-              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>This PIN is what the staff member uses to clock in/out</p>
-            </div>
-            <button onClick={addStaff} disabled={!form.name || form.pin.length < 4 || saving} style={{ width: '100%', background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 16, opacity: !form.name || form.pin.length < 4 ? 0.6 : 1 }}>
-              {saving ? '⏳ Adding...' : '✓ Add Staff Member'}
-            </button>
-          </div>
-        </div>
-      )}
+        ))}
+      </>}
     </div>
   );
 }
