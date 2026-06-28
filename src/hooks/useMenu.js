@@ -11,9 +11,13 @@ export function useMenu() {
   useEffect(() => {
     const unsubs = [
       onSnapshot(
-        query(collection(db, 'menuItems'), orderBy('categoryOrder'), orderBy('order')),
+        collection(db, 'menuItems'),
         (snap) => {
-          setMenuItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i) => i.available !== false));
+          const items = snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((i) => i.available !== false)
+            .sort((a, b) => (a.categoryOrder ?? 99) - (b.categoryOrder ?? 99) || (a.order ?? 99) - (b.order ?? 99));
+          setMenuItems(items);
           setLoading(false);
         },
         (err) => {
@@ -22,8 +26,14 @@ export function useMenu() {
         }
       ),
       onSnapshot(
-        query(collection(db, 'drinks'), orderBy('order')),
-        (snap) => setDrinks(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((d) => d.available !== false)),
+        collection(db, 'drinks'),
+        (snap) => {
+          const items = snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((d) => d.available !== false)
+            .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+          setDrinks(items);
+        },
         (err) => console.error('Drinks error:', err)
       ),
     ];
