@@ -33,6 +33,13 @@ export default function Navbar() {
       </button>
 
       <div className="flex items-center gap-2">
+        <Link
+          to="/gallery"
+          className="text-muted hover:text-brand text-xs font-semibold transition-colors px-2 py-1 hidden sm:block"
+        >
+          Gallery
+        </Link>
+
         {user ? (
           <Link
             to="/account"

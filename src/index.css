@@ -9,13 +9,8 @@
 
 body {
   margin: 0;
-  background-color: #060400;
-  /* Vivid multi-layer warm glow — amber crown at top, orange accent top-right, base warmth */
-  background-image:
-    radial-gradient(ellipse 130% 65% at 50% -8%,  rgba(251,191,36,0.22) 0%, rgba(234,88,12,0.10) 38%, transparent 62%),
-    radial-gradient(ellipse 55%  60% at 98% 2%,   rgba(234,88,12,0.16) 0%, transparent 45%),
-    radial-gradient(ellipse 70%  45% at 0%  100%, rgba(245,158,11,0.08) 0%, transparent 50%);
-  background-attachment: fixed;
+  /* Warm dark brown — visibly NOT black, like charcoal with an ember glow */
+  background: linear-gradient(160deg, #1a0c00 0%, #120800 30%, #0d0600 65%, #100900 100%) fixed;
   color: #f0ead8;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

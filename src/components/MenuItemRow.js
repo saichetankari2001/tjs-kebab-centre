@@ -1,14 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { getItemThumbnail } from '../utils/itemThumbnail';
 
 const itemVariant = {
   hidden:  { opacity: 0, y: 20, scale: 0.97 },
   visible: { opacity: 1, y: 0,  scale: 1, transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] } },
 };
 
-export default function MenuItemRow({ item, onAdd, thumbnail }) {
+export default function MenuItemRow({ item, onAdd }) {
   const displayPrice = item.saladPrice ?? item.price;
+  const thumb = getItemThumbnail(item);
 
   return (
     <motion.div
@@ -44,13 +46,11 @@ export default function MenuItemRow({ item, onAdd, thumbnail }) {
         {item.description && (
           <p className="text-muted text-xs leading-relaxed line-clamp-2">{item.description}</p>
         )}
-        {/* Bowl hint */}
         {item.itemType === 'bowl' && item.saladPrice && (
           <p className="text-brand/75 text-[10px] mt-1 font-semibold">
             Salad ${item.saladPrice} · Rice ${item.ricePrice}
           </p>
         )}
-        {/* HSP / Chips size hint */}
         {(item.itemType === 'hsp' || item.itemType === 'chips') && item.sizePrices && (
           <p className="text-brand/75 text-[10px] mt-1 font-semibold">
             {Object.entries(item.sizePrices).map(([s, p]) => `${s} $${p}`).join(' · ')}
@@ -58,7 +58,7 @@ export default function MenuItemRow({ item, onAdd, thumbnail }) {
         )}
       </div>
 
-      {/* Price + Add button */}
+      {/* Price + Add */}
       <div className="flex flex-col items-end gap-2 flex-shrink-0">
         <span className="text-gradient-brand font-black text-sm">
           {item.itemType === 'bowl' ? `from $${displayPrice}` : `$${Number(displayPrice).toFixed(2)}`}
@@ -68,20 +68,20 @@ export default function MenuItemRow({ item, onAdd, thumbnail }) {
           className="w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-transform shadow"
           style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 10px rgba(245,158,11,0.35)' }}
         >
-          <Plus size={15} strokeWidth={3} className="text-surface" style={{ color: '#060400' }} />
+          <Plus size={15} strokeWidth={3} style={{ color: '#060400' }} />
         </button>
       </div>
 
-      {/* Food photo thumbnail — like Uber Eats */}
-      {thumbnail && (
-        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(44,24,0,0.8)' }}>
+      {/* Unique food thumbnail per item */}
+      {thumb && (
+        <div className="w-[62px] h-[62px] rounded-xl overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(44,24,0,0.9)' }}>
           <motion.img
-            src={thumbnail}
+            src={thumb}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
-            whileHover={{ scale: 1.1 }}
-            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.12 }}
+            transition={{ duration: 0.35 }}
           />
         </div>
       )}

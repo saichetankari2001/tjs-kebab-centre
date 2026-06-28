@@ -75,7 +75,7 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
           <p className="text-muted text-sm text-center py-8">No items available right now.</p>
         ) : (
           items.map((item) => (
-            <MenuItemRow key={item.id} item={item} onAdd={handleAdd} thumbnail={category.photo} />
+            <MenuItemRow key={item.id} item={item} onAdd={handleAdd} />
           ))
         )}
       </motion.div>
