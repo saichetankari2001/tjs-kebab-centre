@@ -15,7 +15,13 @@ export default function Navbar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="sticky top-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-5 md:px-8"
+      className="sticky top-0 z-50 h-16 flex items-center justify-between px-5 md:px-8"
+      style={{
+        background: 'linear-gradient(180deg, rgba(6,4,0,0.98) 0%, rgba(10,6,0,0.96) 100%)',
+        borderBottom: '1px solid rgba(245,158,11,0.15)',
+        boxShadow: '0 1px 0 rgba(245,158,11,0.08), 0 4px 24px rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(12px)',
+      }}
     >
       <button onClick={() => navigate('/')} className="flex items-center gap-2 focus:outline-none">
         <span className="font-display text-2xl tracking-wide text-white leading-none">

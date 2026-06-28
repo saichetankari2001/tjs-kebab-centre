@@ -64,14 +64,18 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-40px' }}
-        className="border-x border-b border-border rounded-b-xl overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #1e1508 0%, #171005 100%)' }}
+        className="border-x border-b rounded-b-xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #130a00 0%, #0e0700 100%)',
+          borderColor: 'rgba(44,24,0,0.9)',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,158,11,0.06)',
+        }}
       >
         {items.length === 0 ? (
           <p className="text-muted text-sm text-center py-8">No items available right now.</p>
         ) : (
           items.map((item) => (
-            <MenuItemRow key={item.id} item={item} onAdd={handleAdd} />
+            <MenuItemRow key={item.id} item={item} onAdd={handleAdd} thumbnail={category.photo} />
           ))
         )}
       </motion.div>

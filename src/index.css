@@ -9,11 +9,13 @@
 
 body {
   margin: 0;
-  background-color: #0d0a06;
+  background-color: #060400;
+  /* Vivid multi-layer warm glow — amber crown at top, orange accent top-right, base warmth */
   background-image:
-    radial-gradient(ellipse 120% 50% at 50% 0%,   rgba(245,158,11,0.10) 0%, transparent 65%),
-    radial-gradient(ellipse 60%  40% at 0%   60%,  rgba(245,158,11,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 60%  40% at 100% 80%,  rgba(180,100,20,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 130% 65% at 50% -8%,  rgba(251,191,36,0.22) 0%, rgba(234,88,12,0.10) 38%, transparent 62%),
+    radial-gradient(ellipse 55%  60% at 98% 2%,   rgba(234,88,12,0.16) 0%, transparent 45%),
+    radial-gradient(ellipse 70%  45% at 0%  100%, rgba(245,158,11,0.08) 0%, transparent 50%);
+  background-attachment: fixed;
   color: #f0ead8;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

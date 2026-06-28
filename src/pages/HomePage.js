@@ -62,9 +62,42 @@ export default function HomePage() {
   const activeId = activeCatId || categories[0]?.id;
 
   return (
-    <div className="bg-surface min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ background: 'transparent' }}>
       <PromoSignupBanner />
       <HeroSection onCtaClick={() => scrollToCategory(categories[0]?.id)} />
+
+      {/* ── Live ticker bar ── */}
+      <div
+        className="w-full overflow-hidden py-2 text-[11px] font-bold tracking-widest uppercase"
+        style={{
+          background: 'linear-gradient(90deg, rgba(245,158,11,0.12) 0%, rgba(234,88,12,0.08) 50%, rgba(245,158,11,0.12) 100%)',
+          borderTop: '1px solid rgba(245,158,11,0.18)',
+          borderBottom: '1px solid rgba(245,158,11,0.18)',
+        }}
+      >
+        <motion.div
+          animate={{ x: [0, -1200] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+          className="flex gap-10 whitespace-nowrap"
+          style={{ width: 'max-content' }}
+        >
+          {[...Array(4)].map((_, i) => (
+            <span key={i} className="flex items-center gap-8">
+              <span className="text-brand">🥙 Chargrilled Kebabs</span>
+              <span className="text-brand/60">·</span>
+              <span className="text-orange-400">🌶️ Homemade Sauces</span>
+              <span className="text-brand/60">·</span>
+              <span className="text-brand">🧆 Fresh Falafel</span>
+              <span className="text-brand/60">·</span>
+              <span className="text-orange-400">🏃 Pickup Ready in ~15 min</span>
+              <span className="text-brand/60">·</span>
+              <span className="text-brand">🎉 Loyalty: Every 5th Order FREE</span>
+              <span className="text-brand/60">·</span>
+            </span>
+          ))}
+        </motion.div>
+      </div>
+
       <CategoryNav
         categories={categories}
         activeCatId={activeId}
