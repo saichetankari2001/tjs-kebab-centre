@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Phone, Mail, MessageSquare, Sparkles } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../hooks/useAuth';
@@ -108,6 +108,18 @@ export default function CheckoutPage() {
         },
       });
       clearCart();
+
+      // Loyalty stamp — increment for logged-in customers
+      if (user?.uid) {
+        const customerRef = doc(db, 'customers', user.uid);
+        const currentStamps = customer?.stamps ?? 0;
+        const newStamps = currentStamps + 1;
+        if (newStamps >= 5) {
+          await updateDoc(customerRef, { stamps: 0, totalOrders: increment(1), freeOrderEligible: true });
+        } else {
+          await updateDoc(customerRef, { stamps: increment(1), totalOrders: increment(1) });
+        }
+      }
 
       // Fire-and-forget — never block navigation on notification failure
       if (form.email.trim()) {

@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
 const itemVariant = {
-  hidden:  { opacity: 0, x: -12 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+  hidden:  { opacity: 0, y: 18, scale: 0.98 },
+  visible: { opacity: 1, y: 0,  scale: 1,   transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export default function MenuItemRow({ item, onAdd }) {
@@ -13,11 +13,20 @@ export default function MenuItemRow({ item, onAdd }) {
   return (
     <motion.div
       variants={itemVariant}
-      whileHover={{ x: 3, backgroundColor: 'rgba(245,158,11,0.04)' }}
-      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="flex items-center gap-4 py-4 px-4 border-b border-border last:border-0 cursor-pointer transition-colors group"
+      whileHover={{ backgroundColor: 'rgba(245,158,11,0.07)', x: 2 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+      className="flex items-center gap-4 py-4 px-4 border-b last:border-0 cursor-pointer group relative"
+      style={{ borderColor: 'rgba(245,158,11,0.08)' }}
       onClick={() => onAdd(item)}
     >
+      {/* Amber left accent on hover */}
+      <motion.div
+        className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand rounded-full"
+        initial={{ scaleY: 0, opacity: 0 }}
+        whileHover={{ scaleY: 1, opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      />
       {/* Text */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
@@ -53,8 +62,8 @@ export default function MenuItemRow({ item, onAdd }) {
 
       {/* Price + Add */}
       <div className="flex flex-col items-end gap-2 flex-shrink-0">
-        <span className="text-brand font-bold text-base">
-          {item.itemType === 'bowl' ? `from $${displayPrice}` : `$${displayPrice.toFixed(2)}`}
+        <span className="text-gradient-brand font-black text-base">
+          {item.itemType === 'bowl' ? `from $${displayPrice}` : `$${Number(displayPrice).toFixed(2)}`}
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onAdd(item); }}

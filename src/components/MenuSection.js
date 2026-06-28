@@ -21,30 +21,39 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
     <section ref={sectionRef} id={`cat-${category.id}`} className="mb-6">
       {/* Category header */}
       <motion.div
-        initial={{ opacity: 0, x: -16 }}
-        whileInView={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="relative h-28 overflow-hidden rounded-t-xl"
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative h-36 overflow-hidden rounded-t-xl"
       >
-        <img
+        {/* Background image with Ken Burns zoom */}
+        <motion.img
           src={category.photo}
           alt={category.name}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
+          initial={{ scale: 1.08 }}
+          whileInView={{ scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 6, ease: 'linear' }}
         />
-        {/* Warm amber-tinted overlay instead of cold grey */}
-        <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-[#0e0b07]/75 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent" />
-        {/* Subtle amber glow from left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand/8 via-transparent to-transparent" />
+        {/* Rich layered overlays for depth */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0e0b07]/96 via-[#0e0b07]/70 to-[#0e0b07]/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e0b07]/90 via-transparent to-transparent" />
+        {/* Amber colour wash */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand/12 via-brand/3 to-transparent" />
+        {/* Top golden shimmer line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-brand/60 via-brand/20 to-transparent" />
 
-        <div className="relative h-full flex items-end px-5 pb-3">
+        <div className="relative h-full flex items-end px-5 pb-4">
           <div>
-            <h2 className="font-display text-3xl text-white tracking-wide leading-none">
+            <span className="text-brand/80 text-[10px] font-black tracking-[0.2em] uppercase block mb-1">
+              {items.length} items
+            </span>
+            <h2 className="font-display text-4xl text-white tracking-wide leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
               {category.emoji} {category.name}
             </h2>
-            <p className="text-muted-warm text-xs mt-0.5 font-medium">{items.length} items</p>
           </div>
         </div>
       </motion.div>
@@ -55,7 +64,8 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-40px' }}
-        className="bg-card border-x border-b border-border rounded-b-xl overflow-hidden"
+        className="border-x border-b border-border rounded-b-xl overflow-hidden"
+        style={{ background: 'linear-gradient(180deg, #1e1508 0%, #171005 100%)' }}
       >
         {items.length === 0 ? (
           <p className="text-muted text-sm text-center py-8">No items available right now.</p>
