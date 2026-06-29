@@ -8,6 +8,72 @@ import MenuSection from '../components/MenuSection';
 import CartBar from '../components/CartBar';
 import PromoSignupBanner from '../components/PromoSignupBanner';
 
+const DISHES_3D = [
+  { url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&q=90', label: 'HSP',              desc: 'Halal Snack Pack',        tag: '🔥 Most Popular' },
+  { url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=600&q=90', label: 'Kebab Wrap',      desc: 'Chargrilled & Fresh',      tag: '⭐ Customer Fave' },
+  { url: 'https://images.unsplash.com/photo-1597694022847-bcdab90d94fb?w=600&q=90', label: 'Chicken Skewers', desc: 'Marinated & Chargrilled',   tag: '🍗 Signature' },
+  { url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=90',    label: 'Lamb Skewers',    desc: 'Slow Chargrilled Perfection', tag: '🥩 BBQ' },
+];
+
+function SignatureDishes3D() {
+  return (
+    <div className="py-10 px-4 overflow-hidden" style={{ background: 'linear-gradient(180deg, rgba(8,5,0,0.98) 0%, rgba(14,9,0,0.95) 100%)' }}>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center text-[11px] font-black tracking-[0.22em] text-brand/80 uppercase mb-6"
+      >
+        ✦ Signature Dishes ✦
+      </motion.p>
+
+      <div className="flex gap-4 overflow-x-auto pb-3 max-w-5xl mx-auto" style={{ scrollbarWidth: 'none' }}>
+        {DISHES_3D.map((d, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 40, rotateX: 20, scale: 0.9 }}
+            whileInView={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ delay: i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{
+              scale: 1.07,
+              rotateY: 6,
+              rotateX: -4,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.40), 0 0 40px rgba(245,158,11,0.20)',
+            }}
+            className="relative rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer"
+            style={{
+              width: 200,
+              height: 260,
+              border: '1px solid rgba(58,32,0,0.9)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+              transformStyle: 'preserve-3d',
+              perspective: 700,
+            }}
+          >
+            <img src={d.url} alt={d.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            {/* Gradient overlay */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(4,2,0,0.95) 0%, rgba(4,2,0,0.30) 55%, transparent 100%)' }} />
+            {/* Shine */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 45%)' }} />
+            {/* Tag */}
+            <div className="absolute top-3 left-3">
+              <span className="text-[9px] font-black px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.90)', color: '#0d0600' }}>
+                {d.tag}
+              </span>
+            </div>
+            {/* Info */}
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-4">
+              <p className="text-white font-black text-base leading-tight mb-0.5">{d.label}</p>
+              <p className="text-brand/80 text-[10px] font-medium">{d.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { categories, loading } = useMenu();
   const { addItem } = useCart();
@@ -65,6 +131,9 @@ export default function HomePage() {
     <div className="min-h-screen pb-24" style={{ background: 'transparent' }}>
       <PromoSignupBanner />
       <HeroSection onCtaClick={() => scrollToCategory(categories[0]?.id)} />
+
+      {/* ── 3D Signature Dishes Strip ── */}
+      <SignatureDishes3D />
 
       {/* ── Live ticker bar ── */}
       <div
