@@ -9,8 +9,8 @@
 
 body {
   margin: 0;
-  /* Warm dark brown — visibly NOT black, like charcoal with an ember glow */
-  background: linear-gradient(160deg, #1a0c00 0%, #120800 30%, #0d0600 65%, #100900 100%) fixed;
+  background-color: #150900;
+  background-image: linear-gradient(160deg, #1e0e00 0%, #150900 35%, #0e0600 70%, #120a00 100%);
   color: #f0ead8;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

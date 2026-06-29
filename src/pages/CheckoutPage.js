@@ -109,16 +109,14 @@ export default function CheckoutPage() {
       });
       clearCart();
 
-      // Loyalty stamp — increment for logged-in customers
+      // Loyalty stamp — fire-and-forget, never block order confirmation navigation
       if (user?.uid) {
         const customerRef = doc(db, 'customers', user.uid);
-        const currentStamps = customer?.stamps ?? 0;
-        const newStamps = currentStamps + 1;
-        if (newStamps >= 5) {
-          await updateDoc(customerRef, { stamps: 0, totalOrders: increment(1), freeOrderEligible: true });
-        } else {
-          await updateDoc(customerRef, { stamps: increment(1), totalOrders: increment(1) });
-        }
+        const newStamps = (customer?.stamps ?? 0) + 1;
+        const update = newStamps >= 5
+          ? { stamps: 0, totalOrders: increment(1), freeOrderEligible: true }
+          : { stamps: increment(1), totalOrders: increment(1) };
+        updateDoc(customerRef, update).catch(err => console.warn('Stamp update failed (non-fatal):', err.message));
       }
 
       // Fire-and-forget — never block navigation on notification failure
