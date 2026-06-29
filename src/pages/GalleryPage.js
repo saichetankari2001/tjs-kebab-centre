@@ -2,20 +2,19 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 
-// Updated with best-match photos for each item category
 const ITEMS = [
-  { id: 1,  url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=800&q=80',  title: 'Kebab Wrap',              category: 'Wraps'    },
-  { id: 2,  url: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=800&q=80',  title: 'Mixed Kebab Wrap',        category: 'Wraps'    },
-  { id: 3,  url: 'https://images.unsplash.com/photo-1597694022847-bcdab90d94fb?w=800&q=80',  title: 'Chicken Skewers',         category: 'Chicken'  },
-  { id: 4,  url: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800&q=80',  title: 'Chargrilled Chicken',     category: 'Chicken'  },
-  { id: 5,  url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80',     title: 'Lamb Skewers on BBQ',     category: 'Lamb'     },
-  { id: 6,  url: 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=800&q=80',  title: 'Chargrilled Lamb',        category: 'Lamb'     },
-  { id: 7,  url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800&q=80',     title: 'HSP – Halal Snack Pack',  category: 'HSP'      },
-  { id: 8,  url: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=800&q=80',  title: 'HSP Large Special',       category: 'HSP'      },
-  { id: 9,  url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=800&q=80',  title: 'Crispy Chips',            category: 'Chips'    },
-  { id: 10, url: 'https://images.unsplash.com/photo-1585325701165-af75f2a72f2d?w=800&q=80',  title: 'Loaded Chips',            category: 'Loaded'   },
-  { id: 11, url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',  title: 'Signature Salad Bowl',    category: 'Bowls'    },
-  { id: 12, url: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',     title: 'Falafel Plate',           category: 'Falafel'  },
+  { id: 1,  url: '/images/wrap-chicken.jpg',   title: 'Chicken Kebab Wrap',     category: 'Wraps'   },
+  { id: 2,  url: '/images/wrap-lamb.jpg',      title: 'Lamb Kebab Wrap',        category: 'Wraps'   },
+  { id: 3,  url: '/images/wrap-beef.jpg',      title: 'Mixed Kebab Wrap',       category: 'Wraps'   },
+  { id: 4,  url: '/images/chicken-skewers.jpg',title: 'Chargrilled Chicken',    category: 'Chicken' },
+  { id: 5,  url: '/images/chicken-grill.jpg',  title: 'Chicken Skewers on BBQ', category: 'Chicken' },
+  { id: 6,  url: '/images/wrap-lamb.jpg',      title: 'Chargrilled Lamb',       category: 'Lamb'    },
+  { id: 7,  url: '/images/chicken-grill.jpg',  title: 'Lamb Skewers on Grill',  category: 'Lamb'    },
+  { id: 8,  url: '/images/hsp-box.jpg',        title: 'HSP – Halal Snack Pack', category: 'HSP'     },
+  { id: 9,  url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=800&q=80', title: 'Crispy Chips',  category: 'Chips'   },
+  { id: 10, url: '/images/bowl-rice.jpg',      title: 'Chicken Rice Bowl',      category: 'Bowls'   },
+  { id: 11, url: '/images/bowl-salad.jpg',     title: 'Chicken Salad Bowl',     category: 'Bowls'   },
+  { id: 12, url: '/images/tabbouleh.jpg',      title: 'Fresh Tabbouleh',        category: 'Salads'  },
 ];
 
 const CATEGORIES = ['All', ...new Set(ITEMS.map(i => i.category))];

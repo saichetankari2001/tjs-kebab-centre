@@ -44,45 +44,61 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-32">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-border flex items-center gap-3 px-4 h-14">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen pb-32"
+      style={{ background: 'transparent' }}
+    >
+      {/* ── Cinematic header ── */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.45 }}
+        className="sticky top-0 z-30 backdrop-blur flex items-center gap-3 px-4 h-14"
+        style={{ background: 'rgba(6,4,0,0.96)', borderBottom: '1px solid rgba(245,158,11,0.14)' }}
+      >
         <button
           onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-muted hover:text-brand transition-colors"
+          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.12)' }}
         >
           <ArrowLeft size={16} />
         </button>
-        <span className="font-bold text-white text-base flex-1">Your Order</span>
-        <span className="text-muted text-sm">
+        <span className="font-display text-xl text-white flex-1 tracking-wide">YOUR ORDER</span>
+        <span className="text-brand text-xs font-black px-2.5 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.20)' }}>
           {itemCount} item{itemCount !== 1 ? 's' : ''}
         </span>
-      </div>
+      </motion.div>
 
-      {/* Pickup notice */}
-      <div className="mx-4 mt-4 bg-brand/10 border border-brand/20 rounded-xl px-4 py-3 flex items-center gap-3">
+      {/* ── Pickup notice ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mx-4 mt-4 rounded-xl px-4 py-3 flex items-center gap-3"
+        style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.06))', border: '1px solid rgba(245,158,11,0.22)' }}
+      >
         <span className="text-xl">🏃</span>
         <div>
-          <p className="text-white font-semibold text-sm">
-            PICKUP ONLY
-          </p>
-          <p className="text-muted text-xs">
-            Come grab your order from our store — no delivery.
-          </p>
+          <p className="text-white font-black text-sm tracking-wider">PICKUP ONLY</p>
+          <p className="text-muted text-xs">Come grab your order — ready in ~15 min</p>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Cart items */}
-      <div className="mx-4 mt-4 bg-card border border-border rounded-xl overflow-hidden">
+      {/* ── Cart items ── */}
+      <div className="mx-4 mt-4 rounded-2xl overflow-hidden" style={{ background: 'rgba(26,13,0,0.95)', border: '1px solid rgba(58,32,0,0.8)', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
         <AnimatePresence initial={false}>
           {cart.map((item, idx) => (
             <motion.div
               key={item.cartId ?? idx}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+              initial={{ opacity: 0, x: -20, height: 0 }}
+              animate={{ opacity: 1, x: 0, height: 'auto' }}
+              exit={{ opacity: 0, x: 20, height: 0 }}
+              transition={{ duration: 0.25, delay: idx * 0.04 }}
+              whileHover={{ backgroundColor: 'rgba(245,158,11,0.04)' }}
+              className="flex items-center gap-3 px-4 py-3 border-b"
+              style={{ borderColor: 'rgba(58,32,0,0.5)' }}
             >
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm truncate">
@@ -259,6 +275,6 @@ export default function CartPage() {
           <span>${total.toFixed(2)} →</span>
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

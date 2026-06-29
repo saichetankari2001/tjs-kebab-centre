@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import MenuItemRow from './MenuItemRow';
 import ItemModal from './ItemModal';
+import { getCategoryPhoto } from '../utils/itemThumbnail';
 
 const containerVariants = {
   hidden: {},
@@ -30,7 +31,7 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
       >
         {/* Background image with Ken Burns zoom */}
         <motion.img
-          src={category.photo}
+          src={getCategoryPhoto(category.name, category.photo)}
           alt={category.name}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"

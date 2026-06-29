@@ -9,10 +9,10 @@ import CartBar from '../components/CartBar';
 import PromoSignupBanner from '../components/PromoSignupBanner';
 
 const DISHES_3D = [
-  { url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&q=90', label: 'HSP',              desc: 'Halal Snack Pack',        tag: '🔥 Most Popular' },
-  { url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=600&q=90', label: 'Kebab Wrap',      desc: 'Chargrilled & Fresh',      tag: '⭐ Customer Fave' },
-  { url: 'https://images.unsplash.com/photo-1597694022847-bcdab90d94fb?w=600&q=90', label: 'Chicken Skewers', desc: 'Marinated & Chargrilled',   tag: '🍗 Signature' },
-  { url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=90',    label: 'Lamb Skewers',    desc: 'Slow Chargrilled Perfection', tag: '🥩 BBQ' },
+  { url: '/images/hsp-box.jpg',         label: 'HSP',              desc: 'Halal Snack Pack',           tag: '🔥 Most Popular' },
+  { url: '/images/wrap-chicken.jpg',    label: 'Kebab Wrap',       desc: 'Chargrilled & Fresh',        tag: '⭐ Customer Fave' },
+  { url: '/images/chicken-skewers.jpg', label: 'Chicken Skewers',  desc: 'Marinated & Chargrilled',    tag: '🍗 Signature'    },
+  { url: '/images/bowl-rice.jpg',       label: 'Signature Bowl',   desc: 'Rice, Salad & Chicken',      tag: '🥗 Healthy'      },
 ];
 
 function SignatureDishes3D() {

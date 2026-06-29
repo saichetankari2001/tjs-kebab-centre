@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogOut, ShoppingBag, User } from 'lucide-react';
+import { LogOut, ShoppingBag } from 'lucide-react';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
@@ -62,31 +62,57 @@ export default function AccountPage() {
   const handleSignOut = async () => { await signOut(); navigate('/'); };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-surface pb-10">
-      <div className="bg-card border-b border-border px-5 py-5">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center">
-              <User size={18} className="text-brand" />
-            </div>
-            <div>
-              <p className="text-white font-bold text-sm">
-                {customer ? `${customer.firstName} ${customer.lastName}` : user.email}
-              </p>
-              <p className="text-muted text-xs">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1.5 text-muted hover:text-white text-xs font-semibold transition-colors"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen pb-10"
+      style={{ background: 'transparent' }}
+    >
+      {/* ── Cinematic profile header ── */}
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #1e0e00 0%, #120800 60%, #0d0600 100%)' }}>
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 100% at 20% 50%, rgba(245,158,11,0.18) 0%, transparent 60%)' }} />
+        <motion.img
+          src="/images/wrap-chicken.jpg"
+          alt=""
+          className="absolute right-0 top-0 h-full w-1/2 object-cover hidden md:block"
+          style={{ filter: 'brightness(0.3)', maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
+          initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 8 }}
+        />
+        <div className="relative px-5 py-7 max-w-lg mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-between"
           >
-            <LogOut size={14} />
-            Sign out
-          </button>
+            <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ scale: 1.05, rotateZ: 5 }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+                style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.25),rgba(234,88,12,0.15))', border: '1px solid rgba(245,158,11,0.30)' }}
+              >
+                🥙
+              </motion.div>
+              <div>
+                <p className="font-display text-2xl text-white tracking-wide">
+                  {customer ? customer.firstName.toUpperCase() : 'MY ACCOUNT'}
+                </p>
+                <p className="text-muted/80 text-xs">{user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 text-muted hover:text-brand text-xs font-semibold transition-colors px-3 py-2 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <LogOut size={12} />
+              Sign out
+            </button>
+          </motion.div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-5 space-y-6">
+      <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         <section>
           <p className="text-xs font-black text-muted tracking-widest uppercase mb-3">My Stamps</p>
           <LoyaltyCard
@@ -115,9 +141,12 @@ export default function AccountPage() {
                 return (
                   <motion.div
                     key={order.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-border rounded-xl p-4"
+                    initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 0.05 }}
+                    whileHover={{ scale: 1.01, boxShadow: '0 4px 24px rgba(245,158,11,0.10)' }}
+                    className="rounded-xl p-4"
+                    style={{ background: 'rgba(26,13,0,0.95)', border: '1px solid rgba(58,32,0,0.9)' }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-muted text-xs">{date}</span>
@@ -142,6 +171,6 @@ export default function AccountPage() {
           )}
         </section>
       </div>
-    </div>
+    </motion.div>
   );
 }
