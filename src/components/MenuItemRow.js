@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { getItemThumbnail } from '../utils/itemThumbnail';
@@ -12,13 +12,34 @@ export default function MenuItemRow({ item, onAdd }) {
   const displayPrice = item.saladPrice ?? item.price;
   const thumb = getItemThumbnail(item);
 
+  const thumbRef = useRef(null);
+  const [tilt, setTilt]   = useState({ x: 0, y: 0 });
+  const [shine, setShine] = useState({ x: 50, y: 50 });
+
+  const onMouseMove = (e) => {
+    const el = thumbRef.current;
+    if (!el) return;
+    const r  = el.getBoundingClientRect();
+    const px = (e.clientX - r.left)  / r.width;
+    const py = (e.clientY - r.top)   / r.height;
+    setTilt({ x: (py - 0.5) * -18, y: (px - 0.5) * 18 });
+    setShine({ x: px * 100, y: py * 100 });
+  };
+
+  const onMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setShine({ x: 50, y: 50 });
+  };
+
   return (
     <motion.div
       variants={itemVariant}
-      whileHover={{ backgroundColor: 'rgba(245,158,11,0.06)' }}
+      whileHover={{ backgroundColor: 'rgba(245,158,11,0.05)', x: 2 }}
       whileTap={{ scale: 0.987 }}
       className="flex items-center gap-3 py-3.5 px-4 border-b last:border-0 cursor-pointer group relative"
       style={{ borderColor: 'rgba(44,24,0,0.8)' }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
       onClick={() => onAdd(item)}
     >
       {/* Amber left accent */}
@@ -72,18 +93,33 @@ export default function MenuItemRow({ item, onAdd }) {
         </button>
       </div>
 
-      {/* Unique food thumbnail per item */}
+      {/* 3D tilt thumbnail */}
       {thumb && (
-        <div className="w-[62px] h-[62px] rounded-xl overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(44,24,0,0.9)' }}>
+        <motion.div
+          ref={thumbRef}
+          className="w-[68px] h-[68px] rounded-xl overflow-hidden flex-shrink-0 border relative"
+          style={{
+            borderColor: 'rgba(44,24,0,0.9)',
+            perspective: 500,
+            transformStyle: 'preserve-3d',
+          }}
+          animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          whileHover={{ scale: 1.10, boxShadow: '0 8px 28px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.30)' }}
+        >
           <motion.img
             src={thumb}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
-            whileHover={{ scale: 1.12 }}
-            transition={{ duration: 0.35 }}
+            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
           />
-        </div>
+          {/* Shine overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style={{ background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.18) 0%, transparent 65%)` }}
+          />
+        </motion.div>
       )}
     </motion.div>
   );

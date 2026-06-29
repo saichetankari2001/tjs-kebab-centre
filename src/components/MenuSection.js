@@ -39,6 +39,10 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
           whileInView={{ scale: 1, rotateX: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 6, ease: 'easeOut' }}
+          onError={(e) => {
+            const fallback = 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80';
+            if (e.target.src !== fallback) e.target.src = fallback;
+          }}
         />
         {/* Rich layered overlays for depth */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0e0b07]/96 via-[#0e0b07]/70 to-[#0e0b07]/20" />
