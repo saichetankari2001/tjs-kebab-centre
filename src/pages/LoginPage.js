@@ -50,7 +50,7 @@ export default function LoginPage() {
       {/* Food photo - left side desktop */}
       <div className="absolute left-0 top-0 bottom-0 w-1/2 hidden xl:block overflow-hidden">
         <motion.img
-          src="/images/wrap-chicken.jpg"
+          src="/images/chicken-doner-kebab.jpg"
           alt="TJ's Food"
           className="w-full h-full object-cover"
           initial={{ scale: 1.1, opacity: 0 }}

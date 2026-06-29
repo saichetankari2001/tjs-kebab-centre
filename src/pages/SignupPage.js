@@ -58,7 +58,7 @@ export default function SignupPage() {
       {/* Food photo - right side desktop */}
       <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden xl:block overflow-hidden">
         <motion.img
-          src="/images/hsp-box.jpg"
+          src="/images/HSP.jpg"
           alt="TJ's Food"
           className="w-full h-full object-cover"
           initial={{ scale: 1.1, opacity: 0 }}

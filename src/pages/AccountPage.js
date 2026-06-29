@@ -72,7 +72,7 @@ export default function AccountPage() {
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #1e0e00 0%, #120800 60%, #0d0600 100%)' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 100% at 20% 50%, rgba(245,158,11,0.18) 0%, transparent 60%)' }} />
         <motion.img
-          src="/images/wrap-chicken.jpg"
+          src="/images/chicken-doner-kebab.jpg"
           alt=""
           className="absolute right-0 top-0 h-full w-1/2 object-cover hidden md:block"
           style={{ filter: 'brightness(0.3)', maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
@@ -95,7 +95,7 @@ export default function AccountPage() {
               </motion.div>
               <div>
                 <p className="font-display text-2xl text-white tracking-wide">
-                  {customer ? customer.firstName.toUpperCase() : 'MY ACCOUNT'}
+                  {customer?.firstName ? customer.firstName.toUpperCase() : 'MY ACCOUNT'}
                 </p>
                 <p className="text-muted/80 text-xs">{user.email}</p>
               </div>
