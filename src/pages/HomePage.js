@@ -9,10 +9,10 @@ import CartBar from '../components/CartBar';
 import PromoSignupBanner from '../components/PromoSignupBanner';
 
 const DISHES_3D = [
-  { url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&h=520&q=80', label: 'HSP',             desc: 'Halal Snack Pack',        tag: '🔥 Most Popular' },
-  { url: 'https://images.unsplash.com/photo-1599487489082-78e929282ae0?auto=format&fit=crop&w=400&h=520&q=80', label: 'Kebab Wrap',      desc: 'Chargrilled & Fresh',     tag: '⭐ Customer Fave' },
-  { url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?auto=format&fit=crop&w=400&h=520&q=80', label: 'Chicken Skewers', desc: 'Marinated & Chargrilled', tag: '🍗 Signature'    },
-  { url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&h=520&q=80', label: 'Signature Bowl',  desc: 'Rice, Salad & Chicken',  tag: '🥗 Healthy'      },
+  { url: '/images/HSP.jpg',                        label: 'HSP',             desc: 'Halal Snack Pack',        tag: '🔥 Most Popular' },
+  { url: '/images/chicken-doner-kebab.jpg',        label: 'Kebab Wrap',      desc: 'Chargrilled & Fresh',     tag: '⭐ Customer Fave' },
+  { url: '/images/Chargrilled-ChickenSkewer.jpg',  label: 'Chicken Skewers', desc: 'Marinated & Chargrilled', tag: '🍗 Signature'    },
+  { url: '/images/RiceBowl.jpg',                   label: 'Signature Bowl',  desc: 'Rice, Salad & Chicken',  tag: '🥗 Healthy'      },
 ];
 
 function SignatureDishes3D() {

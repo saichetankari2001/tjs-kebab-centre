@@ -5,9 +5,9 @@ import { HERO_PHOTO } from '../data/menu';
 
 // 3D Floating food showcase cards — right side of hero
 const SHOWCASE = [
-  { url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&h=480&q=80', label: 'HSP',             rotate: -12, x: 0,   y: -60,  z: 40,  delay: 0    },
-  { url: 'https://images.unsplash.com/photo-1599487489082-78e929282ae0?auto=format&fit=crop&w=400&h=480&q=80', label: 'Kebab Wrap',      rotate:  6,  x: 30,  y:  20,  z: 0,   delay: 0.15 },
-  { url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?auto=format&fit=crop&w=400&h=480&q=80', label: 'Chicken Skewers', rotate: 18,  x: -20, y: 100,  z: -40, delay: 0.3  },
+  { url: '/images/HSP.jpg',                         label: 'HSP',             rotate: -12, x: 0,   y: -60,  z: 40,  delay: 0    },
+  { url: '/images/chicken-doner-kebab.jpg',         label: 'Kebab Wrap',      rotate:  6,  x: 30,  y:  20,  z: 0,   delay: 0.15 },
+  { url: '/images/Chargrilled-ChickenSkewer.jpg',   label: 'Chicken Skewers', rotate: 18,  x: -20, y: 100,  z: -40, delay: 0.3  },
 ];
 
 // Hours

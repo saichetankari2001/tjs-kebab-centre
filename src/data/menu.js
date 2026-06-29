@@ -1,4 +1,4 @@
-// Category metadata and stock photo URLs (Unsplash — no API key required)
+// Category metadata — local uploads used where available, Unsplash fallback otherwise
 export const HERO_PHOTO =
   'https://images.unsplash.com/photo-1561043433-aaf687c4cf04?auto=format&fit=crop&w=1400&q=80';
 
@@ -7,26 +7,25 @@ export const CATEGORIES = [
     id: 'wraps',
     name: 'Kebab Wraps',
     emoji: '🌯',
-    photo: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/chicken-doner-kebab.jpg',
   },
   {
     id: 'bowls',
     name: 'Signature Bowls',
     emoji: '🥗',
-    photo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/RiceBowl.jpg',
   },
   {
     id: 'hsp',
     name: 'HSP',
     emoji: '🍟',
-    // Halal Snack Pack — chips topped with doner meat in a takeaway box
-    photo: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/HSP.jpg',
   },
   {
     id: 'skewers',
     name: 'Skewers',
     emoji: '🍢',
-    photo: 'https://images.unsplash.com/photo-1544025162-d76538485696?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/Chargrilled-ChickenSkewer.jpg',
   },
   {
     id: 'chips',
@@ -50,7 +49,7 @@ export const CATEGORIES = [
     id: 'dips',
     name: 'Homemade Dips',
     emoji: '🫙',
-    photo: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/tzatziki.jpg',
   },
   {
     id: 'drinks',
