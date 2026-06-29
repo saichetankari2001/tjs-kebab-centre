@@ -18,53 +18,85 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
     else setModalItem(item);
   };
 
+  const photoSrc = getCategoryPhoto(category.name, category.photo);
+
   return (
     <section ref={sectionRef} id={`cat-${category.id}`} className="mb-6">
-      {/* Category header */}
+      {/* ── Cinematic category header ── */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative h-36 overflow-hidden rounded-t-xl"
-        style={{ perspective: 800 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden rounded-t-xl h-40 md:h-[220px]"
       >
-        {/* Background image with Ken Burns zoom */}
-        <motion.img
-          src={getCategoryPhoto(category.name, category.photo)}
+        {/* Background photo — warm cinematic filter, no animation */}
+        <img
+          src={photoSrc}
           alt={category.name}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
-          initial={{ scale: 1.10, rotateX: 4 }}
-          whileInView={{ scale: 1, rotateX: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 6, ease: 'easeOut' }}
+          style={{ filter: 'saturate(1.35) contrast(1.08) brightness(0.8)' }}
           onError={(e) => {
             const fallback = 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80';
             if (e.target.src !== fallback) e.target.src = fallback;
           }}
         />
-        {/* Rich layered overlays for depth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0e0b07]/96 via-[#0e0b07]/70 to-[#0e0b07]/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0e0b07]/90 via-transparent to-transparent" />
-        {/* Amber colour wash */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand/12 via-brand/3 to-transparent" />
-        {/* Top golden shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-brand/60 via-brand/20 to-transparent" />
 
-        <div className="relative h-full flex items-end px-5 pb-4">
+        {/* Layer 1 — deep left-to-right dark vignette */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(105deg, rgba(4,2,0,0.97) 0%, rgba(4,2,0,0.82) 40%, rgba(4,2,0,0.30) 70%, rgba(4,2,0,0.10) 100%)' }}
+        />
+
+        {/* Layer 2 — bottom-up dark gradient */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(4,2,0,1) 0%, rgba(4,2,0,0.5) 30%, transparent 60%)' }}
+        />
+
+        {/* Layer 3 — amber radial glow left */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 55% 90% at -5% 50%, rgba(245,158,11,0.22) 0%, transparent 60%)' }}
+        />
+
+        {/* Layer 4 — 2px amber bottom border line */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[2px]"
+          style={{ background: 'linear-gradient(90deg, rgba(245,158,11,0.9) 0%, rgba(234,88,12,0.4) 40%, transparent 70%)' }}
+        />
+
+        {/* Text — absolute, bottom edge */}
+        <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 flex items-end justify-between">
           <div>
-            <span className="text-brand/80 text-[10px] font-black tracking-[0.2em] uppercase block mb-1">
-              {items.length} items
+            <span
+              className="block mb-1 font-black tracking-[0.2em] uppercase"
+              style={{ fontSize: '10px', color: 'rgba(245,158,11,0.85)' }}
+            >
+              {items.length} item{items.length !== 1 ? 's' : ''}
             </span>
-            <h2 className="font-display text-4xl text-white tracking-wide leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
+            <h2
+              className="font-display text-4xl md:text-5xl text-white tracking-wide leading-none"
+              style={{ textShadow: '0 2px 24px rgba(0,0,0,0.9)' }}
+            >
               {category.emoji} {category.name}
             </h2>
+          </div>
+
+          {/* Bottom-right tag */}
+          <div className="pb-1">
+            <span
+              className="font-semibold tracking-wide"
+              style={{ fontSize: '10px', color: 'rgba(245,158,11,0.75)' }}
+            >
+              Made fresh to order
+            </span>
           </div>
         </div>
       </motion.div>
 
-      {/* Items list with stagger */}
+      {/* ── Items list with stagger ── */}
       <motion.div
         variants={containerVariants}
         initial="hidden"

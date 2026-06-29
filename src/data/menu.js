@@ -26,7 +26,7 @@ export const CATEGORIES = [
     id: 'skewers',
     name: 'Skewers',
     emoji: '🍢',
-    photo: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1544025162-d76538485696?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'chips',

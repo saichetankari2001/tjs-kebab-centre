@@ -88,6 +88,8 @@ export function getCategoryPhoto(categoryName, firestorePhoto) {
   if (n.includes('snack') || n.includes('nugget')) return IMG.nuggets;
   if (n.includes('drink') || n.includes('beverage')) return IMG.drink;
   if (n.includes('falafel'))                        return IMG.falafel;
+  if (n.includes('skewer'))                         return IMG.chicken;
+  if (n.includes('signature'))                      return IMG.chicken; // "Signature Bowls" fallback
   // Only fall back to Firestore URL if we have nothing better
   return firestorePhoto || IMG.bowl;
 }

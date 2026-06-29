@@ -41,12 +41,17 @@ export function useMenu() {
   }, []);
 
   // Build ordered category list with items attached — CATEGORIES is canonical for order/metadata
-  const categories = CATEGORIES.map((cat) => ({
-    ...cat,
-    items: cat.id === 'drinks'
-      ? drinks
-      : menuItems.filter((item) => item.categoryId === cat.id),
-  })).filter((cat) => cat.items.length > 0);
+  const categories = CATEGORIES.map((cat) => {
+    if (cat.id === 'drinks') {
+      // Merge drinks from both: dedicated 'drinks' collection + menuItems with categoryId 'drinks'
+      const fromMenuItems = menuItems.filter((item) => item.categoryId === 'drinks');
+      const allDrinks = [...drinks];
+      const existingIds = new Set(drinks.map((d) => d.id));
+      fromMenuItems.forEach((item) => { if (!existingIds.has(item.id)) allDrinks.push(item); });
+      return { ...cat, items: allDrinks };
+    }
+    return { ...cat, items: menuItems.filter((item) => item.categoryId === cat.id) };
+  }).filter((cat) => cat.items.length > 0);
 
   return { categories, loading };
 }

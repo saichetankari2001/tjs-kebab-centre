@@ -13,8 +13,9 @@ export default function MenuItemRow({ item, onAdd }) {
   const thumb = getItemThumbnail(item);
 
   const thumbRef = useRef(null);
-  const [tilt, setTilt]   = useState({ x: 0, y: 0 });
-  const [shine, setShine] = useState({ x: 50, y: 50 });
+  const [tilt,      setTilt]      = useState({ x: 0, y: 0 });
+  const [shine,     setShine]     = useState({ x: 50, y: 50 });
+  const [imgHidden, setImgHidden] = useState(false);
 
   const onMouseMove = (e) => {
     const el = thumbRef.current;
@@ -34,15 +35,19 @@ export default function MenuItemRow({ item, onAdd }) {
   return (
     <motion.div
       variants={itemVariant}
-      whileHover={{ backgroundColor: 'rgba(245,158,11,0.05)', x: 2 }}
+      className="flex items-center gap-4 px-4 py-4 cursor-pointer group relative"
+      style={{
+        minHeight: '100px',
+        background: 'rgba(16,8,0,0.98)',
+        borderBottom: '1px solid rgba(40,20,0,0.8)',
+      }}
+      whileHover={{ backgroundColor: 'rgba(245,158,11,0.05)' }}
       whileTap={{ scale: 0.987 }}
-      className="flex items-center gap-3 py-3.5 px-4 border-b last:border-0 cursor-pointer group relative"
-      style={{ borderColor: 'rgba(44,24,0,0.8)' }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       onClick={() => onAdd(item)}
     >
-      {/* Amber left accent */}
+      {/* Amber left accent bar — appears on hover */}
       <motion.div
         className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
         style={{ background: 'linear-gradient(180deg, #fbbf24, #ea580c)' }}
@@ -51,55 +56,82 @@ export default function MenuItemRow({ item, onAdd }) {
         transition={{ duration: 0.18 }}
       />
 
-      {/* Text */}
+      {/* ── Left side: text info ── */}
       <div className="flex-1 min-w-0 pl-1">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-semibold text-white text-sm leading-snug">{item.name}</span>
+        {/* Name + popular badge */}
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+          <span
+            className="font-semibold text-white leading-snug"
+            style={{ fontSize: '15px' }}
+          >
+            {item.name}
+          </span>
           {item.popular && (
             <span
-              className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase"
+              className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase flex-shrink-0"
               style={{ background: 'linear-gradient(135deg,#fbbf24,#ea580c)', color: '#060400' }}
             >
               Popular
             </span>
           )}
         </div>
+
+        {/* Description */}
         {item.description && (
-          <p className="text-muted text-xs leading-relaxed line-clamp-2">{item.description}</p>
+          <p
+            className="text-muted text-xs leading-relaxed line-clamp-2"
+            style={{ maxWidth: '32ch' }}
+          >
+            {item.description}
+          </p>
         )}
+
+        {/* Bowl salad/rice prices */}
         {item.itemType === 'bowl' && item.saladPrice && (
-          <p className="text-brand/75 text-[10px] mt-1 font-semibold">
+          <p className="text-[10px] mt-1 font-semibold" style={{ color: 'rgba(245,158,11,0.75)' }}>
             Salad ${item.saladPrice} · Rice ${item.ricePrice}
           </p>
         )}
+
+        {/* HSP / chips size prices */}
         {(item.itemType === 'hsp' || item.itemType === 'chips') && item.sizePrices && (
-          <p className="text-brand/75 text-[10px] mt-1 font-semibold">
+          <p className="text-[10px] mt-1 font-semibold" style={{ color: 'rgba(245,158,11,0.75)' }}>
             {Object.entries(item.sizePrices).map(([s, p]) => `${s} $${p}`).join(' · ')}
           </p>
         )}
+
+        {/* Price */}
+        <p className="mt-1.5 font-black text-base" style={{ color: '#f59e0b' }}>
+          {item.itemType === 'bowl'
+            ? `from $${displayPrice}`
+            : `$${Number(displayPrice).toFixed(2)}`}
+        </p>
       </div>
 
-      {/* Price + Add */}
-      <div className="flex flex-col items-end gap-2 flex-shrink-0">
-        <span className="text-gradient-brand font-black text-sm">
-          {item.itemType === 'bowl' ? `from $${displayPrice}` : `$${Number(displayPrice).toFixed(2)}`}
-        </span>
-        <button
-          onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-          className="w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-transform shadow"
-          style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 10px rgba(245,158,11,0.35)' }}
-        >
-          <Plus size={15} strokeWidth={3} style={{ color: '#060400' }} />
-        </button>
-      </div>
+      {/* ── Add button ── */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+        className="flex-shrink-0 flex items-center justify-center rounded-full hover:scale-110 active:scale-90 transition-transform"
+        style={{
+          width: '36px',
+          height: '36px',
+          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+          boxShadow: '0 2px 10px rgba(245,158,11,0.35)',
+        }}
+      >
+        <Plus size={15} strokeWidth={3} style={{ color: '#060400' }} />
+      </button>
 
-      {/* 3D tilt thumbnail */}
-      {thumb && (
+      {/* ── 3D tilt thumbnail ── */}
+      {thumb && !imgHidden && (
         <motion.div
           ref={thumbRef}
-          className="w-[68px] h-[68px] rounded-xl overflow-hidden flex-shrink-0 border relative"
+          className="flex-shrink-0 rounded-xl overflow-hidden relative"
           style={{
-            borderColor: 'rgba(44,24,0,0.9)',
+            width: '88px',
+            height: '88px',
+            border: '1px solid rgba(50,25,0,0.9)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.65), 0 0 0 1px rgba(245,158,11,0.10)',
             perspective: 500,
             transformStyle: 'preserve-3d',
           }}
@@ -107,14 +139,22 @@ export default function MenuItemRow({ item, onAdd }) {
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           whileHover={{ scale: 1.10, boxShadow: '0 8px 28px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.30)' }}
         >
-          <motion.img
+          <img
             src={thumb}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
-            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+            style={{ filter: 'saturate(1.25) contrast(1.06) brightness(0.88)' }}
+            onError={() => setImgHidden(true)}
           />
-          {/* Shine overlay */}
+
+          {/* Warm overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, transparent 60%)' }}
+          />
+
+          {/* Mouse-tracking shine */}
           <div
             className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             style={{ background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.18) 0%, transparent 65%)` }}
