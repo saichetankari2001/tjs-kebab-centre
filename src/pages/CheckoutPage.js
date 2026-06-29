@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowLeft, User, Phone, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import { collection, addDoc, setDoc, doc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -13,14 +14,17 @@ const PAYMENT_OPTIONS = [
   { id: 'online', label: 'Pay Online',       icon: '📱', sub: 'Stripe payment — coming soon', disabled: true },
 ];
 
-const inputCls = (err) =>
-  `w-full bg-card border ${err ? 'border-red-500' : 'border-border'} rounded-xl px-4 py-3 text-sm text-white placeholder-muted outline-none focus:border-brand/50 transition-colors`;
+const CARD = {
+  background: 'rgba(14,7,0,0.97)',
+  border: '1px solid rgba(50,25,0,0.9)',
+  boxShadow: '0 4px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,158,11,0.05)',
+};
 
 function SectionTitle({ title, icon }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      {icon && <span className="text-muted">{icon}</span>}
-      <h2 className="text-xs font-black text-muted tracking-widest uppercase">{title}</h2>
+      {icon && <span className="text-brand/60">{icon}</span>}
+      <h2 className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: 'rgba(245,158,11,0.65)' }}>{title}</h2>
     </div>
   );
 }
@@ -109,7 +113,6 @@ export default function CheckoutPage() {
       });
       clearCart();
 
-      // Loyalty stamp — setDoc with merge handles missing doc + fire-and-forget
       if (user?.uid) {
         const customerRef = doc(db, 'customers', user.uid);
         const newStamps = (customer?.stamps ?? 0) + 1;
@@ -120,7 +123,6 @@ export default function CheckoutPage() {
           .catch(err => console.warn('Stamp update failed:', err.message));
       }
 
-      // Fire-and-forget — never block navigation on notification failure
       if (form.email.trim()) {
         fetch(`${process.env.REACT_APP_API_URL ?? 'http://localhost:4000'}/api/notify/order-confirm`, {
           method: 'POST',
@@ -137,11 +139,7 @@ export default function CheckoutPage() {
       }
 
       navigate(`/order-confirmation/${orderRef.id}`, {
-        state: {
-          orderId:      orderRef.id,
-          customerName: form.firstName.trim(),
-          total,
-        },
+        state: { orderId: orderRef.id, customerName: form.firstName.trim(), total },
       });
     } catch (err) {
       console.error('Order failed:', err);
@@ -151,221 +149,190 @@ export default function CheckoutPage() {
     }
   };
 
-  if (itemCount === 0) {
-    navigate('/');
-    return null;
-  }
+  if (itemCount === 0) { navigate('/'); return null; }
+
+  const iStyle = (err) => ({
+    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${err ? 'rgba(239,68,68,0.5)' : 'rgba(50,25,0,0.9)'}`,
+    borderRadius: '12px',
+    padding: '12px 16px',
+    color: 'white',
+    fontSize: '14px',
+    outline: 'none',
+    width: '100%',
+    transition: 'border-color 0.2s',
+  });
+
+  const onFocus  = (e) => { e.target.style.borderColor = 'rgba(245,158,11,0.5)'; };
+  const onBlurFn = (err) => (e) => { e.target.style.borderColor = err ? 'rgba(239,68,68,0.5)' : 'rgba(50,25,0,0.9)'; };
 
   return (
-    <form onSubmit={handleSubmit} className="min-h-screen bg-surface pb-32">
-      {/* Promo banner */}
+    <motion.form
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onSubmit={handleSubmit}
+      className="min-h-screen pb-32"
+    >
       <PromoSignupBanner />
 
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-border flex items-center gap-3 px-4 h-14">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-full bg-card2 flex items-center justify-center text-muted hover:text-white transition-colors"
-        >
+      {/* ── Cinematic header ── */}
+      <motion.div
+        initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}
+        className="sticky top-0 z-30 backdrop-blur flex items-center gap-3 px-4 h-14"
+        style={{ background: 'rgba(6,4,0,0.97)', borderBottom: '1px solid rgba(245,158,11,0.14)' }}
+      >
+        <button type="button" onClick={() => navigate(-1)}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-muted hover:text-brand transition-colors"
+          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.12)' }}>
           <ArrowLeft size={16} />
         </button>
-        <span className="font-bold text-white text-base flex-1">Checkout</span>
-        <span className="bg-brand/20 text-brand text-xs font-black px-3 py-1 rounded-full tracking-wider uppercase">
-          PICKUP
+        <span className="font-display text-xl text-white flex-1 tracking-wide">CHECKOUT</span>
+        <span className="text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase"
+          style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.22)', color: '#fbbf24' }}>
+          PICKUP ONLY
         </span>
-      </div>
+      </motion.div>
 
-      <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+      <div className="max-w-lg mx-auto px-4 pt-5 space-y-4">
 
-        {/* Customer details */}
-        <section>
-          <SectionTitle icon={<User size={14} />} title="Your Details" />
+        {/* ── Customer details ── */}
+        <motion.section initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
+          className="rounded-2xl p-5" style={CARD}>
+          <SectionTitle icon={<User size={13} />} title="Your Details" />
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <Field error={errors.firstName}>
-                <input
-                  value={form.firstName}
-                  onChange={set('firstName')}
-                  placeholder="First name"
-                  className={inputCls(errors.firstName)}
-                />
+                <input value={form.firstName} onChange={set('firstName')} placeholder="First name"
+                  style={iStyle(errors.firstName)} onFocus={onFocus} onBlur={onBlurFn(errors.firstName)} />
               </Field>
               <Field error={errors.lastName}>
-                <input
-                  value={form.lastName}
-                  onChange={set('lastName')}
-                  placeholder="Last name"
-                  className={inputCls(errors.lastName)}
-                />
+                <input value={form.lastName} onChange={set('lastName')} placeholder="Last name"
+                  style={iStyle(errors.lastName)} onFocus={onFocus} onBlur={onBlurFn(errors.lastName)} />
               </Field>
             </div>
             <Field error={errors.phone}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-                  <Phone size={13} />
-                </span>
-                <input
-                  value={form.phone}
-                  onChange={set('phone')}
-                  placeholder="+61 4xx xxx xxx"
-                  type="tel"
-                  className={`${inputCls(errors.phone)} pl-9`}
-                />
+                <Phone size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color:'rgba(156,138,114,0.6)' }} />
+                <input value={form.phone} onChange={set('phone')} placeholder="+61 4xx xxx xxx" type="tel"
+                  style={{ ...iStyle(errors.phone), paddingLeft: '36px' }} onFocus={onFocus} onBlur={onBlurFn(errors.phone)} />
               </div>
             </Field>
             <Field error={errors.email}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-                  <Mail size={13} />
-                </span>
-                <input
-                  value={form.email}
-                  onChange={set('email')}
-                  placeholder="you@email.com (optional)"
-                  type="email"
-                  className={`${inputCls(errors.email)} pl-9`}
-                />
+                <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color:'rgba(156,138,114,0.6)' }} />
+                <input value={form.email} onChange={set('email')} placeholder="you@email.com (optional)" type="email"
+                  style={{ ...iStyle(errors.email), paddingLeft: '36px' }} onFocus={onFocus} onBlur={onBlurFn(errors.email)} />
               </div>
             </Field>
             <Field>
               <div className="relative">
-                <span className="absolute left-3 top-3.5 text-muted">
-                  <MessageSquare size={13} />
-                </span>
-                <textarea
-                  value={form.note}
-                  onChange={set('note')}
-                  placeholder="Allergies, extra requests..."
-                  rows={2}
-                  className={`${inputCls()} pl-9 resize-none`}
-                />
+                <MessageSquare size={13} className="absolute left-3.5 top-3.5 pointer-events-none" style={{ color:'rgba(156,138,114,0.6)' }} />
+                <textarea value={form.note} onChange={set('note')} placeholder="Allergies, extra requests..." rows={2}
+                  style={{ ...iStyle(false), paddingLeft: '36px', resize: 'none' }} onFocus={onFocus} onBlur={onBlurFn(false)} />
               </div>
             </Field>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Promo sign-up section */}
-        <section className="bg-brand/5 border border-brand/20 rounded-2xl p-4">
+        {/* ── Promo sign-up ── */}
+        <motion.section initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.10 }}
+          className="rounded-2xl p-4"
+          style={{ background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.18)', boxShadow: CARD.boxShadow }}>
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={16} className="text-brand" />
+            <Sparkles size={15} className="text-brand" />
             <div>
               <p className="text-white font-bold text-sm">Get exclusive deals &amp; promo codes</p>
-              <p className="text-muted text-xs">Sign up to receive TJ's specials, discounts &amp; new menu alerts</p>
+              <p className="text-xs" style={{ color:'rgba(156,138,114,0.8)' }}>Sign up for TJ's specials, discounts &amp; new menu alerts</p>
             </div>
           </div>
-          <div className="flex gap-3 mb-3 flex-wrap">
-            {[
-              ['email', '📧', 'Email',       optEmail, setOptEmail],
-              ['sms',   '💬', 'SMS',          optSMS,   setOptSMS  ],
-              ['push',  '🔔', 'Push alerts', optPush,  setOptPush ],
-            ].map(([id, ic, label, val, setter]) => (
-              <label
-                key={id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-xs font-semibold transition-all ${
-                  val
-                    ? 'border-brand text-brand bg-brand/10'
-                    : 'border-border text-muted hover:border-brand/40'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={val}
-                  onChange={(e) => setter(e.target.checked)}
-                />
+          <div className="flex gap-2 mb-3 flex-wrap">
+            {[['email','📧','Email',optEmail,setOptEmail],['sms','💬','SMS',optSMS,setOptSMS],['push','🔔','Push',optPush,setOptPush]].map(([id,ic,label,val,setter]) => (
+              <label key={id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-xs font-semibold transition-all"
+                style={val ? { border:'1px solid rgba(245,158,11,0.6)', color:'#fbbf24', background:'rgba(245,158,11,0.12)' }
+                           : { border:'1px solid rgba(50,25,0,0.8)', color:'#9c8a72', background:'rgba(255,255,255,0.02)' }}>
+                <input type="checkbox" className="hidden" checked={val} onChange={(e) => setter(e.target.checked)} />
                 {ic} {label}
               </label>
             ))}
           </div>
           {(optEmail || optSMS) && (
             <div className="space-y-2">
-              {optEmail && (
-                <input
-                  type="email"
-                  value={promoEmail}
-                  onChange={(e) => setPromoEmail(e.target.value)}
-                  placeholder={`Email${form.email ? ` (using ${form.email})` : ''}`}
-                  className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-muted outline-none focus:border-brand/50 transition-colors"
-                />
-              )}
-              {optSMS && (
-                <input
-                  type="tel"
-                  value={promoSMS}
-                  onChange={(e) => setPromoSMS(e.target.value)}
-                  placeholder="+61 4xx xxx xxx"
-                  className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-muted outline-none focus:border-brand/50 transition-colors"
-                />
-              )}
+              {optEmail && <input type="email" value={promoEmail} onChange={(e) => setPromoEmail(e.target.value)}
+                placeholder={`Email${form.email ? ` (using ${form.email})` : ''}`}
+                style={{ ...iStyle(false), fontSize:'13px' }} onFocus={onFocus} onBlur={onBlurFn(false)} />}
+              {optSMS && <input type="tel" value={promoSMS} onChange={(e) => setPromoSMS(e.target.value)}
+                placeholder="+61 4xx xxx xxx"
+                style={{ ...iStyle(false), fontSize:'13px' }} onFocus={onFocus} onBlur={onBlurFn(false)} />}
             </div>
           )}
-        </section>
+        </motion.section>
 
-        {/* Payment method */}
-        <section>
+        {/* ── Payment method ── */}
+        <motion.section initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.15 }}
+          className="rounded-2xl p-5" style={CARD}>
           <SectionTitle title="Payment Method" />
           <div className="space-y-2">
             {PAYMENT_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                disabled={opt.disabled}
+              <button key={opt.id} type="button" disabled={opt.disabled}
                 onClick={() => !opt.disabled && setPayment(opt.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                  payment === opt.id ? 'border-brand bg-brand/5' : 'border-border bg-card'
-                } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-brand/40'}`}
-              >
-                <span className="text-xl w-6 text-center">{opt.icon}</span>
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={payment === opt.id
+                  ? { border:'1px solid rgba(245,158,11,0.50)', background:'rgba(245,158,11,0.08)' }
+                  : { border:'1px solid rgba(50,25,0,0.8)', background:'rgba(255,255,255,0.02)' }}>
+                <span className="text-xl w-7 text-center">{opt.icon}</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold text-sm">{opt.label}</p>
                   <p className="text-muted text-xs">{opt.sub}</p>
                 </div>
-                <div
-                  className={`w-4 h-4 rounded-full border-2 transition-colors flex-shrink-0 ${
-                    payment === opt.id ? 'border-brand bg-brand' : 'border-muted'
-                  }`}
-                />
+                <div className="w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all"
+                  style={payment === opt.id ? { borderColor:'#f59e0b', background:'#f59e0b' } : { borderColor:'rgba(100,70,40,0.8)' }} />
               </button>
             ))}
           </div>
-        </section>
+        </motion.section>
 
-        {/* Order summary */}
-        <section className="bg-card border border-border rounded-xl overflow-hidden">
-          <p className="text-xs font-bold text-muted tracking-wider uppercase px-4 pt-3 pb-2 border-b border-border">
-            Order Summary
-          </p>
+        {/* ── Order summary ── */}
+        <motion.section initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.20 }}
+          className="rounded-2xl overflow-hidden" style={CARD}>
+          <div className="px-5 pt-4 pb-2 flex items-center justify-between" style={{ borderBottom:'1px solid rgba(50,25,0,0.7)' }}>
+            <p className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color:'rgba(245,158,11,0.65)' }}>Order Summary</p>
+            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full tracking-widest uppercase"
+              style={{ background:'rgba(245,158,11,0.10)', border:'1px solid rgba(245,158,11,0.20)', color:'#fbbf24' }}>
+              Pickup
+            </span>
+          </div>
           {cart.map((item, i) => (
-            <div
-              key={i}
-              className="flex justify-between px-4 py-2 text-sm border-b border-border last:border-0"
-            >
-              <span className="text-white">
-                {item.displayName ?? item.name}
-                {item.qty > 1 && ` ×${item.qty}`}
-              </span>
+            <div key={i} className="flex justify-between px-5 py-2.5 text-sm" style={{ borderBottom:'1px solid rgba(35,18,0,0.6)' }}>
+              <span style={{ color:'rgba(255,255,255,0.9)' }}>{item.displayName ?? item.name}{item.qty > 1 && ` ×${item.qty}`}</span>
               <span className="text-muted">${(item.price * item.qty).toFixed(2)}</span>
             </div>
           ))}
-          <div className="flex justify-between px-4 py-3 font-black">
-            <span className="text-white">Total</span>
-            <span className="text-brand text-lg">${total.toFixed(2)}</span>
+          <div className="flex justify-between items-center px-5 py-4">
+            <span className="text-white font-black text-base">Total</span>
+            <span className="font-black text-xl"
+              style={{ background:'linear-gradient(135deg,#fbbf24,#ea580c)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
+              ${total.toFixed(2)}
+            </span>
           </div>
-        </section>
+        </motion.section>
       </div>
 
-      {/* Submit CTA */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-5 pt-3 bg-surface/95 backdrop-blur border-t border-border">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-brand text-surface font-black text-sm py-4 rounded-xl flex items-center justify-between px-6 hover:bg-brand-lit transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow shadow-brand/20"
-        >
-          <span>{submitting ? 'Placing Order...' : 'Place Order'}</span>
+      {/* ── Fixed CTA ── */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 backdrop-blur"
+        style={{ background:'rgba(6,4,0,0.97)', borderTop:'1px solid rgba(245,158,11,0.12)' }}>
+        <motion.button type="submit" disabled={submitting}
+          whileHover={{ scale: submitting ? 1 : 1.02, boxShadow:'0 0 40px rgba(245,158,11,0.5)' }}
+          whileTap={{ scale: 0.97 }}
+          className="relative w-full overflow-hidden font-black text-sm tracking-widest uppercase py-4 rounded-xl disabled:opacity-60 flex items-center justify-between px-6"
+          style={{ background:'linear-gradient(135deg,#fbbf24,#f59e0b,#ea580c)', color:'#060400' }}>
+          <motion.div className="absolute inset-0 pointer-events-none"
+            style={{ background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent)' }}
+            animate={{ x:['-100%','220%'] }}
+            transition={{ duration:1.6, repeat:Infinity, repeatDelay:2.5, ease:'easeInOut' }} />
+          <span>{submitting ? 'Placing Order...' : 'PLACE ORDER'}</span>
           {!submitting && <span>${total.toFixed(2)} →</span>}
-        </button>
+        </motion.button>
       </div>
-    </form>
+    </motion.form>
   );
 }
