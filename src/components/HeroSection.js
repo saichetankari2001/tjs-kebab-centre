@@ -1,125 +1,184 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronRight, Clock, Zap, Star } from 'lucide-react';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ChevronRight, Clock, Star } from 'lucide-react';
 import { HERO_PHOTO } from '../data/menu';
 
 const FLOATERS = [
-  { emoji: '🥙', x: '68%', y: '18%', delay: 0 },
-  { emoji: '🌯', x: '80%', y: '38%', delay: 0.6 },
-  { emoji: '🧆', x: '74%', y: '60%', delay: 1.1 },
-  { emoji: '🥩', x: '87%', y: '24%', delay: 0.3 },
-  { emoji: '🌶️', x: '63%', y: '50%', delay: 0.9 },
-  { emoji: '🫙', x: '91%', y: '55%', delay: 1.5 },
+  { emoji: '🥙', x: '68%', y: '18%', delay: 0,   z: 1.0 },
+  { emoji: '🌯', x: '80%', y: '38%', delay: 0.6, z: 0.7 },
+  { emoji: '🧆', x: '74%', y: '60%', delay: 1.1, z: 0.5 },
+  { emoji: '🥩', x: '87%', y: '24%', delay: 0.3, z: 0.9 },
+  { emoji: '🌶️', x: '63%', y: '50%', delay: 0.9, z: 0.6 },
+  { emoji: '🫙', x: '91%', y: '55%', delay: 1.5, z: 0.4 },
 ];
 
-export default function HeroSection({ onCtaClick }) {
-  const [orderCount, setOrderCount] = useState(() => 44 + Math.floor(Math.random() * 18));
+// Hours: Sun–Thu 11:30am–12:00am | Fri–Sat 11:30am–2:00am
+const HOURS_WEEKDAY = '11:30am – 12:00am';
+const HOURS_WEEKEND = '11:30am – 2:00am';
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (Math.random() > 0.6) setOrderCount(n => n + 1);
-    }, 9000);
-    return () => clearInterval(id);
-  }, []);
+function getOpenStatus() {
+  const d   = new Date();
+  const day = d.getDay();                                   // 0=Sun…6=Sat
+  const min = d.getHours() * 60 + d.getMinutes();
+  const OPEN = 11 * 60 + 30;
+
+  // Sat or Sun 12:00am–2:00am — still open from Fri/Sat night
+  if ((day === 6 || day === 0) && min < 120) return true;
+  // Otherwise: open if past 11:30am
+  return min >= OPEN;
+}
+
+function getTodayHours() {
+  const day = new Date().getDay();
+  return (day === 5 || day === 6) ? HOURS_WEEKEND : HOURS_WEEKDAY;
+}
+
+export default function HeroSection({ onCtaClick }) {
+  const sectionRef = useRef(null);
+  const { scrollY } = useScroll();
+
+  // Parallax: background drifts down 25% while content rises 8%
+  const bgY      = useTransform(scrollY, [0, 600], ['0%', '25%']);
+  const contentY = useTransform(scrollY, [0, 600], ['0%', '-8%']);
+  const opacity  = useTransform(scrollY, [0, 400], [1, 0]);
+
+  const open         = getOpenStatus();
+  const todayHours   = getTodayHours();
 
   return (
-    <section className="relative w-full overflow-hidden flex flex-col justify-end" style={{ minHeight: '78vh' }}>
+    <section
+      ref={sectionRef}
+      className="relative w-full overflow-hidden flex flex-col justify-end"
+      style={{ minHeight: '82vh', perspective: '1000px' }}
+    >
 
-      {/* ── Background photo ── */}
-      <motion.img
-        src={HERO_PHOTO}
-        alt="TJ's Kebab Centre"
-        className="absolute inset-0 w-full h-full object-cover"
-        loading="eager"
-        initial={{ scale: 1.08 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 8, ease: 'easeOut' }}
-      />
+      {/* ── Background photo with parallax ── */}
+      <motion.div
+        className="absolute inset-0 w-full h-[120%] -top-[10%]"
+        style={{ y: bgY }}
+      >
+        <motion.img
+          src={HERO_PHOTO}
+          alt="TJ's Kebab Centre"
+          className="w-full h-full object-cover"
+          loading="eager"
+          initial={{ scale: 1.12 }}
+          animate={{ scale: 1.02 }}
+          transition={{ duration: 10, ease: 'easeOut' }}
+        />
+      </motion.div>
 
-      {/* ── Layered overlays — directional so food shows right ── */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(6,4,0,0.97) 0%, rgba(6,4,0,0.80) 40%, rgba(6,4,0,0.45) 65%, rgba(6,4,0,0.15) 100%)' }} />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,4,0,1) 0%, rgba(6,4,0,0.65) 28%, transparent 55%)' }} />
-      {/* Vivid amber glow left */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 15% 55%, rgba(245,158,11,0.18) 0%, transparent 60%)' }} />
-      {/* Vivid orange glow right — lights the food */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 55% at 80% 35%, rgba(234,88,12,0.22) 0%, transparent 50%)' }} />
+      {/* ── Layered overlays ── */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(6,4,0,0.97) 0%, rgba(6,4,0,0.82) 42%, rgba(6,4,0,0.45) 65%, rgba(6,4,0,0.15) 100%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,4,0,1) 0%, rgba(6,4,0,0.65) 30%, transparent 58%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 15% 55%, rgba(245,158,11,0.20) 0%, transparent 60%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 55% at 80% 35%, rgba(234,88,12,0.24) 0%, transparent 50%)' }} />
 
-      {/* ── Animated scan shimmer ── */}
+      {/* ── Cinematic scan shimmer ── */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.05) 50%, transparent 100%)', width: '200%' }}
+        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.06) 50%, transparent 100%)', width: '200%' }}
         animate={{ x: ['-100%', '100%'] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear', repeatDelay: 7 }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'linear', repeatDelay: 8 }}
       />
 
-      {/* ── Floating food emojis ── */}
+      {/* ── Top golden line ── */}
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.7) 40%, rgba(234,88,12,0.4) 70%, transparent 100%)' }} />
+
+      {/* ── 3D Depth floating emojis ── */}
       {FLOATERS.map((f, i) => (
         <motion.span
           key={i}
           className="absolute text-3xl select-none pointer-events-none hidden lg:block"
-          style={{ left: f.x, top: f.y, filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.4))' }}
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 0.75, scale: 1, y: [0, -14, 0] }}
+          style={{
+            left: f.x, top: f.y,
+            filter: 'drop-shadow(0 0 10px rgba(245,158,11,0.5))',
+            translateZ: `${f.z * 40}px`,
+          }}
+          initial={{ opacity: 0, scale: 0.4, rotateY: -30 }}
+          animate={{
+            opacity: 0.80,
+            scale: f.z,
+            rotateY: 0,
+            y: [0, -16 * f.z, 0],
+          }}
           transition={{
-            opacity: { delay: f.delay + 0.8, duration: 0.6 },
-            scale:   { delay: f.delay + 0.8, duration: 0.6 },
-            y:       { delay: f.delay, duration: 3 + i * 0.35, repeat: Infinity, ease: 'easeInOut' },
+            opacity: { delay: f.delay + 0.8, duration: 0.7 },
+            scale:   { delay: f.delay + 0.8, duration: 0.7 },
+            rotateY: { delay: f.delay + 0.8, duration: 1.0 },
+            y:       { delay: f.delay, duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut' },
           }}
         >{f.emoji}</motion.span>
       ))}
 
-      {/* ── Top golden shimmer line ── */}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.7) 40%, rgba(234,88,12,0.4) 70%, transparent 100%)' }} />
+      {/* ── Content with parallax ── */}
+      <motion.div
+        className="relative z-10 px-6 md:px-14 pb-16 pt-16 max-w-4xl"
+        style={{ y: contentY, opacity }}
+      >
 
-      {/* ── Content ── */}
-      <div className="relative z-10 px-6 md:px-14 pb-14 pt-16 max-w-4xl">
-
-        {/* Live badges */}
+        {/* Status + Hours row */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="flex items-center flex-wrap gap-3 mb-5"
+          transition={{ delay: 0.1, duration: 0.55 }}
+          className="flex items-center flex-wrap gap-3 mb-6"
         >
-          <span className="flex items-center gap-2 border border-green-500/40 text-green-400 text-[11px] font-black px-3 py-1.5 rounded-full backdrop-blur-sm" style={{ background: 'rgba(16,185,129,0.12)' }}>
+          {/* OPEN / CLOSED status */}
+          <span
+            className="flex items-center gap-2 text-[11px] font-black px-3 py-1.5 rounded-full backdrop-blur-sm border"
+            style={open ? {
+              background: 'rgba(16,185,129,0.14)',
+              borderColor: 'rgba(52,211,153,0.35)',
+              color: '#34d399',
+            } : {
+              background: 'rgba(239,68,68,0.12)',
+              borderColor: 'rgba(239,68,68,0.30)',
+              color: '#f87171',
+            }}
+          >
             <motion.span
-              animate={{ opacity: [1, 0.2, 1] }}
+              animate={{ opacity: open ? [1, 0.2, 1] : 1 }}
               transition={{ repeat: Infinity, duration: 1.1 }}
-              className="w-2 h-2 bg-green-400 rounded-full"
+              className="w-2 h-2 rounded-full"
+              style={{ background: open ? '#34d399' : '#f87171' }}
             />
-            OPEN NOW
+            {open ? 'OPEN NOW' : 'CLOSED'}
           </span>
-          <span className="flex items-center gap-1.5 text-brand text-[11px] font-bold backdrop-blur-sm border border-brand/20 px-2.5 py-1.5 rounded-full" style={{ background: 'rgba(245,158,11,0.10)' }}>
-            <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-              <Zap size={10} fill="currentColor" />
-            </motion.span>
-            <motion.span key={orderCount} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-              {orderCount} orders today
-            </motion.span>
-          </span>
-          <span className="flex items-center gap-1 text-muted-warm text-[11px] font-medium">
+
+          {/* Today's hours */}
+          <span
+            className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm border"
+            style={{ background: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.22)', color: '#d4a84b' }}
+          >
             <Clock size={10} />
-            Pickup in ~15 min
+            Today: {todayHours}
+          </span>
+
+          {/* Full hours note */}
+          <span className="text-muted text-[10px] hidden sm:block">
+            Sun–Thu 11:30am–12am &nbsp;·&nbsp; Fri–Sat 11:30am–2am
           </span>
         </motion.div>
 
-        {/* Title */}
+        {/* Title — 3D depth with drop shadow layers */}
         <motion.h1
-          className="font-display leading-none tracking-wide mb-3"
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="font-display leading-none tracking-wide mb-4"
+          initial={{ opacity: 0, y: 40, rotateX: 12 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ delay: 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ transformOrigin: 'bottom center' }}
         >
-          <span className="text-white block" style={{ fontSize: 'clamp(3.2rem,11vw,7.5rem)', textShadow: '0 0 40px rgba(0,0,0,0.8)' }}>TJ'S</span>
-          <span className="text-gradient-brand block" style={{ fontSize: 'clamp(3.8rem,13vw,9rem)', textShadow: '0 0 60px rgba(245,158,11,0.3)' }}>KEBAB</span>
-          <span className="text-white block" style={{ fontSize: 'clamp(2.2rem,8vw,5.5rem)', textShadow: '0 0 40px rgba(0,0,0,0.8)' }}>CENTRE</span>
+          <span className="text-white block" style={{ fontSize: 'clamp(3.2rem,11vw,7.5rem)', textShadow: '0 4px 40px rgba(0,0,0,0.9), 0 0 80px rgba(245,158,11,0.08)' }}>TJ'S</span>
+          <span className="text-gradient-brand block" style={{ fontSize: 'clamp(3.8rem,13vw,9rem)', textShadow: '0 4px 60px rgba(245,158,11,0.35), 0 8px 80px rgba(0,0,0,0.6)' }}>KEBAB</span>
+          <span className="text-white block" style={{ fontSize: 'clamp(2.2rem,8vw,5.5rem)', textShadow: '0 4px 40px rgba(0,0,0,0.9)' }}>CENTRE</span>
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.32, duration: 0.5 }}
           className="text-muted-warm text-sm sm:text-base mb-8 max-w-sm leading-relaxed"
         >
           Chargrilled meats, homemade sauces &amp; fresh salads — made fresh to order.{' '}
@@ -128,27 +187,25 @@ export default function HeroSection({ onCtaClick }) {
 
         {/* CTA row */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.42, duration: 0.45 }}
+          transition={{ delay: 0.45, duration: 0.45 }}
           className="flex items-center flex-wrap gap-3"
         >
-          {/* Main CTA */}
           <motion.button
             onClick={onCtaClick}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.06, boxShadow: '0 0 48px rgba(245,158,11,0.55), 0 8px 32px rgba(0,0,0,0.5)' }}
+            whileTap={{ scale: 0.94 }}
             className="group relative overflow-hidden flex items-center gap-2 font-black text-sm tracking-widest uppercase px-8 py-4 rounded-xl"
             style={{
               background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 45%, #ea580c 100%)',
               color: '#060400',
-              boxShadow: '0 0 30px rgba(245,158,11,0.40), 0 4px 20px rgba(0,0,0,0.4)',
+              boxShadow: '0 0 30px rgba(245,158,11,0.42), 0 4px 20px rgba(0,0,0,0.4)',
             }}
           >
-            {/* shimmer pass */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.30) 50%, transparent 100%)' }}
+              style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.32) 50%, transparent 100%)' }}
               animate={{ x: ['-100%', '200%'] }}
               transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
             />
@@ -156,11 +213,10 @@ export default function HeroSection({ onCtaClick }) {
             <ChevronRight size={16} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
           </motion.button>
 
-          {/* Stars */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.65 }}
+            transition={{ delay: 0.7 }}
             className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl backdrop-blur-sm border"
             style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.10)' }}
           >
@@ -169,9 +225,9 @@ export default function HeroSection({ onCtaClick }) {
             <span className="text-muted text-xs ml-0.5">· 200+ reviews</span>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Bottom amber line */}
+      {/* Bottom amber gradient line */}
       <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.5) 50%, transparent 100%)' }} />
     </section>
   );

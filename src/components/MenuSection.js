@@ -26,6 +26,7 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative h-36 overflow-hidden rounded-t-xl"
+        style={{ perspective: 800 }}
       >
         {/* Background image with Ken Burns zoom */}
         <motion.img
@@ -33,10 +34,10 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
           alt={category.name}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
-          initial={{ scale: 1.08 }}
-          whileInView={{ scale: 1 }}
+          initial={{ scale: 1.10, rotateX: 4 }}
+          whileInView={{ scale: 1, rotateX: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 6, ease: 'linear' }}
+          transition={{ duration: 6, ease: 'easeOut' }}
         />
         {/* Rich layered overlays for depth */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0e0b07]/96 via-[#0e0b07]/70 to-[#0e0b07]/20" />
