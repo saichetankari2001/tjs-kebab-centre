@@ -209,9 +209,33 @@ export default function OrderConfirmationPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="w-full max-w-sm"
+          className="w-full max-w-sm space-y-3"
         >
-          <p className="text-[10px] font-black text-muted tracking-widest uppercase mb-3 text-center">
+          {/* Stamp earned banner */}
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 1, type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 border"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(234,88,12,0.10) 100%)',
+              borderColor: 'rgba(245,158,11,0.35)',
+            }}
+          >
+            <span className="text-2xl">🎉</span>
+            <div className="text-left">
+              <p className="text-brand font-black text-sm leading-tight">
+                {customer.freeOrderEligible ? 'FREE ORDER UNLOCKED!' : 'Stamp Earned!'}
+              </p>
+              <p className="text-muted text-xs">
+                {customer.freeOrderEligible
+                  ? 'Your next kebab is on us 🥙'
+                  : `${customer.stamps ?? 0}/5 — ${5 - (customer.stamps ?? 0)} more for a free kebab`}
+              </p>
+            </div>
+          </motion.div>
+
+          <p className="text-[10px] font-black text-muted tracking-widest uppercase text-center">
             Your Loyalty Progress
           </p>
           <LoyaltyCard stamps={customer.stamps} freeOrderEligible={customer.freeOrderEligible} />

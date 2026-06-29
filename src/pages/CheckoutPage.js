@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Phone, Mail, MessageSquare, Sparkles } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, setDoc, doc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../hooks/useAuth';
@@ -109,14 +109,15 @@ export default function CheckoutPage() {
       });
       clearCart();
 
-      // Loyalty stamp — fire-and-forget, never block order confirmation navigation
+      // Loyalty stamp — setDoc with merge handles missing doc + fire-and-forget
       if (user?.uid) {
         const customerRef = doc(db, 'customers', user.uid);
         const newStamps = (customer?.stamps ?? 0) + 1;
-        const update = newStamps >= 5
+        const stampUpdate = newStamps >= 5
           ? { stamps: 0, totalOrders: increment(1), freeOrderEligible: true }
           : { stamps: increment(1), totalOrders: increment(1) };
-        updateDoc(customerRef, update).catch(err => console.warn('Stamp update failed (non-fatal):', err.message));
+        setDoc(customerRef, stampUpdate, { merge: true })
+          .catch(err => console.warn('Stamp update failed:', err.message));
       }
 
       // Fire-and-forget — never block navigation on notification failure
