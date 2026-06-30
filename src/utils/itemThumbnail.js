@@ -36,19 +36,21 @@ const REMOTE = {
 
 function getDrinkPhoto(name) {
   const n = name.toLowerCase();
-  if (n.includes('sparkling'))                         return LOCAL.sparklingWater;
-  if (n.includes('water'))                             return LOCAL.water;
-  if (n.includes('red bull') || n.includes('redbull')) return LOCAL.redBull;
-  if (n.includes('schweppes'))                         return LOCAL.schweppes;
-  if (n.includes('sunkist'))                           return LOCAL.sunkist;
-  if (n.includes('solo'))                              return LOCAL.solo;
-  if (n.includes('fanta'))                             return LOCAL.fanta;
-  if (n.includes('sprite'))                            return LOCAL.sprite;
-  if (n.includes('pepsi'))                             return LOCAL.pepsiMax;
-  if (n.includes('zero') || n.includes('zero sugar'))  return LOCAL.cokeZero;
-  if (n.includes('diet'))                              return LOCAL.cokeDiet;
-  if (n.includes('1.25') || n.includes('large'))       return LOCAL.cokeClassic;
+  if (n.includes('sparkling'))                          return LOCAL.sparklingWater;
+  if (n.includes('water'))                              return LOCAL.water;
+  if (n.includes('red bull') || n.includes('redbull'))  return LOCAL.redBull;
+  if (n.includes('schweppes'))                          return LOCAL.schweppes;
+  if (n.includes('sunkist'))                            return LOCAL.sunkist;
+  if (n.includes('solo'))                               return LOCAL.solo;
+  if (n.includes('fanta'))                              return LOCAL.fanta;
+  if (n.includes('sprite'))                             return LOCAL.sprite;
+  if (n.includes('pepsi'))                              return LOCAL.pepsiMax;
+  if (n.includes('zero') || n.includes('zero sugar'))   return LOCAL.cokeZero;
+  if (n.includes('diet'))                               return LOCAL.cokeDiet;
+  if (n.includes('1.25') || n.includes('large'))        return LOCAL.cokeClassic;
+  if (n.includes('600') || n.includes('regular'))       return LOCAL.cokeZero;
   if (n.includes('coke') || n.includes('cola') || n.includes('coca')) return LOCAL.coke;
+  // generic names: "Can" → small coke can
   return LOCAL.coke;
 }
 
