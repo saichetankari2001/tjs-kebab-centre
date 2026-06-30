@@ -18,7 +18,9 @@
     "tailwind-merge": "^3.6.0"
   },
   "scripts": {
+    "prestart": "node scripts/generate-sw.js",
     "start": "react-scripts start",
+    "prebuild": "node scripts/generate-sw.js",
     "build": "react-scripts build",
     "test": "react-scripts test"
   },

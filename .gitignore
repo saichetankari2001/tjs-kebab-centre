@@ -8,6 +8,9 @@ server/.env
 # production build
 build/
 
+# generated service worker (built from public/firebase-messaging-sw.template.js)
+public/firebase-messaging-sw.js
+
 # environment variables — never commit these
 .env
 .env.local

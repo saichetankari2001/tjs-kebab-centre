@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyC88dWTwoCGKFYhpdT32wO7xSggk97IgDs",
-  authDomain: "tj-s-kebab-centre.firebaseapp.com",
-  projectId: "tj-s-kebab-centre",
-  storageBucket: "tj-s-kebab-centre.firebasestorage.app",
-  messagingSenderId: "527619562751",
-  appId: "1:527619562751:web:1d1979b2b98f2139c340ca"
+  apiKey: "%REACT_APP_FIREBASE_API_KEY%",
+  authDomain: "%REACT_APP_FIREBASE_AUTH_DOMAIN%",
+  projectId: "%REACT_APP_FIREBASE_PROJECT_ID%",
+  storageBucket: "%REACT_APP_FIREBASE_STORAGE_BUCKET%",
+  messagingSenderId: "%REACT_APP_FIREBASE_MESSAGING_SENDER_ID%",
+  appId: "%REACT_APP_FIREBASE_APP_ID%"
 });
 
 const messaging = firebase.messaging();
