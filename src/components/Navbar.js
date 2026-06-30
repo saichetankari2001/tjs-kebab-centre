@@ -63,6 +63,7 @@ export default function Navbar() {
         )}
 
         <button
+          data-cart-btn
           onClick={() => navigate('/cart')}
           className="relative flex items-center gap-2 bg-brand text-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-lit transition-colors active:scale-95"
         >

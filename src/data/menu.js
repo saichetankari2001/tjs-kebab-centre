@@ -43,7 +43,7 @@ export const CATEGORIES = [
     id: 'loaded',
     name: 'Loaded Upgrade',
     emoji: '⚡',
-    photo: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'dips',
@@ -55,6 +55,6 @@ export const CATEGORIES = [
     id: 'drinks',
     name: 'Drinks',
     emoji: '🥤',
-    photo: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=800&q=80',
+    photo: '/images/Coke Classic1.25L.jpg',
   },
 ];

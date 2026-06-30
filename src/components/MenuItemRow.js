@@ -1,7 +1,33 @@
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { getItemThumbnail } from '../utils/itemThumbnail';
+
+function FlyingThumb({ src, startX, startY, onDone }) {
+  const cartEl = document.querySelector('[data-cart-btn]');
+  const cr = cartEl ? cartEl.getBoundingClientRect() : null;
+  const tx = cr ? cr.left + cr.width / 2 - startX - 30 : window.innerWidth - startX - 80;
+  const ty = cr ? cr.top  + cr.height / 2 - startY - 30 : 24 - startY;
+  return createPortal(
+    <motion.img
+      src={src}
+      alt=""
+      style={{
+        position: 'fixed', left: startX, top: startY,
+        width: 60, height: 60, borderRadius: 12, zIndex: 9999,
+        objectFit: 'cover', pointerEvents: 'none',
+        filter: 'saturate(1.3) contrast(1.05)',
+        boxShadow: '0 4px 20px rgba(245,158,11,0.5)',
+      }}
+      initial={{ x: 0, y: 0, scale: 1, opacity: 1, rotate: 0 }}
+      animate={{ x: tx, y: ty, scale: 0.15, opacity: 0, rotate: 12 }}
+      transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+      onAnimationComplete={onDone}
+    />,
+    document.body
+  );
+}
 
 const itemVariant = {
   hidden:  { opacity: 0, y: 20, scale: 0.97 },
@@ -16,6 +42,7 @@ export default function MenuItemRow({ item, onAdd }) {
   const [tilt,      setTilt]      = useState({ x: 0, y: 0 });
   const [shine,     setShine]     = useState({ x: 50, y: 50 });
   const [imgHidden, setImgHidden] = useState(false);
+  const [flyPos,    setFlyPos]    = useState(null);
 
   const onMouseMove = (e) => {
     const el = thumbRef.current;
@@ -109,8 +136,24 @@ export default function MenuItemRow({ item, onAdd }) {
       </div>
 
       {/* ── Add button ── */}
+      {flyPos && thumb && !imgHidden && (
+        <FlyingThumb
+          src={thumb}
+          startX={flyPos.x}
+          startY={flyPos.y}
+          onDone={() => setFlyPos(null)}
+        />
+      )}
+
       <button
-        onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (thumbRef.current) {
+            const r = thumbRef.current.getBoundingClientRect();
+            setFlyPos({ x: r.left, y: r.top });
+          }
+          onAdd(item);
+        }}
         className="flex-shrink-0 flex items-center justify-center rounded-full hover:scale-110 active:scale-90 transition-transform"
         style={{
           width: '36px',
