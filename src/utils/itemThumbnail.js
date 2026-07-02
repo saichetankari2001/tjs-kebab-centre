@@ -12,7 +12,7 @@ const LOCAL = {
   tabouli:       '/images/Tabouli.jpg',
   dip:           '/images/tzatziki.jpg',
   // Drinks
-  coke:          '/images/coke 375ml.jpg',
+  coke:          '/images/Coke Classic1.25L.jpg',
   cokeZero:      '/images/Coke ZeroSugar 600ml.jpg',
   cokeDiet:      '/images/Coke diet.jpg',
   cokeClassic:   '/images/Coke Classic1.25L.jpg',

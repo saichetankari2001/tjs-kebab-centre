@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "TJ's Merchant",
+    "slug": "tjs-merchant",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#030200",
+    "splash": {
+      "backgroundColor": "#030200",
+      "resizeMode": "contain"
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "bundleIdentifier": "com.tjskebab.merchant",
+      "infoPlist": {
+        "UIRequiresFullScreen": true
+      }
+    },
+    "android": {
+      "package": "com.tjskebab.merchant",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#030200",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": []
+  }
+}
