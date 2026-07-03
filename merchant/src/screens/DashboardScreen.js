@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window');
 const TABS = ['PENDING', 'ACTIVE', 'COMPLETED'];
 
 export default function DashboardScreen({ onLogout }) {
-  const { pending, active, completed, loading, newOrderIds, clearAllNew, clearNewOrder, updateStatus } = useOrders();
+  const { pending, active, completed, loading, error, newOrderIds, clearAllNew, clearNewOrder, updateStatus } = useOrders();
   const [tab,          setTab]          = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [refreshing,   setRefreshing]   = useState(false);
@@ -145,7 +145,13 @@ export default function DashboardScreen({ onLogout }) {
             <RefreshControl refreshing={refreshing} onRefresh={() => setRefreshing(false)} tintColor={C.brand} />
           }
         >
-          {loading ? (
+          {error ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyIcon}>⚠️</Text>
+              <Text style={styles.emptyText}>Cannot connect to orders</Text>
+              <Text style={styles.emptySubText}>{error}</Text>
+            </View>
+          ) : loading ? (
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyText}>Loading orders...</Text>
             </View>
