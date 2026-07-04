@@ -262,9 +262,6 @@ export default function ItemModal({ item, isOpen, onClose }) {
                       >
                         {sauce.name}
                         {sauce.popular && <span>⭐</span>}
-                        {selectedSauces.length > 0 && selectedSauces[0] !== sauce.id && active && (
-                          <span className="opacity-70">+$2</span>
-                        )}
                       </button>
                     );
                   })}
