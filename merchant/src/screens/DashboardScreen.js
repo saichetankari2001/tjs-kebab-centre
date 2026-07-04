@@ -51,7 +51,7 @@ export default function DashboardScreen({ onLogout }) {
     clearAllNew();
   }, [clearAllNew]);
 
-  const handleAccept   = (id) => updateStatus(id, 'confirmed');
+  const handleAccept   = (id, mins) => updateStatus(id, 'confirmed', mins);
   const handlePrepare  = (id) => updateStatus(id, 'preparing');
   const handleReady    = (id) => updateStatus(id, 'ready');
 
@@ -176,7 +176,7 @@ export default function DashboardScreen({ onLogout }) {
                 key={order.id}
                 order={order}
                 isNew={newOrderIds.includes(order.id)}
-                onAccept={() => handleAccept(order.id)}
+                onAccept={(mins) => handleAccept(order.id, mins)}
                 onPrepare={() => handlePrepare(order.id)}
                 onReady={() => handleReady(order.id)}
                 onPress={() => setSelectedOrder(order)}

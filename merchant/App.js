@@ -5,6 +5,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
+import { recordLogin, recordLogout } from './src/hooks/useStaffSessions';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -22,9 +23,11 @@ export default function App() {
   const handleLogin = async () => {
     await AsyncStorage.setItem('merchant_logged_in', 'true');
     setLoggedIn(true);
+    recordLogin();
   };
 
   const handleLogout = async () => {
+    await recordLogout();
     await AsyncStorage.removeItem('merchant_logged_in');
     setLoggedIn(false);
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -31,8 +31,10 @@ export default function OrderConfirmationPage() {
   const legacyOrderRef = location.state?.orderRef;
   const orderId = paramOrderId || stateOrderId;
 
-  const [status, setStatus] = useState('pending');
-  const [order,  setOrder]  = useState(null);
+  const [status,    setStatus]    = useState('pending');
+  const [order,     setOrder]     = useState(null);
+  const [minsLeft,  setMinsLeft]  = useState(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (!orderId) return;
@@ -45,6 +47,23 @@ export default function OrderConfirmationPage() {
     });
     return unsub;
   }, [orderId]);
+
+  // Countdown timer — ticks every second while order is accepted
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!order?.estimatedMinutes || !order?.acceptedAt) { setMinsLeft(null); return; }
+    if (status === 'ready') { setMinsLeft(0); return; }
+
+    const readyAt = order.acceptedAt.toDate().getTime() + order.estimatedMinutes * 60000;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((readyAt - Date.now()) / 60000));
+      setMinsLeft(remaining);
+    };
+    tick();
+    timerRef.current = setInterval(tick, 10000);
+    return () => clearInterval(timerRef.current);
+  }, [order?.estimatedMinutes, order?.acceptedAt, status]);
 
   const currentStep = STATUS_ORDER.indexOf(status);
 
@@ -108,6 +127,52 @@ export default function OrderConfirmationPage() {
       </div>
 
       <div className="max-w-sm mx-auto px-4 pt-6 space-y-5">
+
+        {/* ── Estimated time countdown ── */}
+        {minsLeft !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+            className="relative rounded-2xl overflow-hidden"
+            style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(234,88,12,0.08),rgba(14,7,0,0.97))', border: '1px solid rgba(245,158,11,0.35)', boxShadow: '0 0 40px rgba(245,158,11,0.10)' }}
+          >
+            <div className="absolute top-0 left-8 right-8 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(245,158,11,0.6),transparent)' }} />
+            <div className="px-5 py-4 flex items-center gap-4">
+              <motion.div
+                animate={minsLeft > 0 ? { rotate: [0, -8, 8, -8, 0] } : {}}
+                transition={{ repeat: Infinity, duration: 2.5, repeatDelay: 1 }}
+                className="text-4xl select-none"
+              >
+                {minsLeft === 0 ? '🎉' : '⏱️'}
+              </motion.div>
+              <div className="flex-1 min-w-0">
+                {minsLeft === 0 ? (
+                  <>
+                    <p className="font-black text-base leading-tight"
+                      style={{ background: 'linear-gradient(135deg,#fbbf24,#ea580c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                      Should be ready now!
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(245,158,11,0.55)' }}>Head to the counter to collect your order</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[10px] font-black tracking-[0.18em] uppercase mb-0.5" style={{ color: 'rgba(245,158,11,0.55)' }}>Estimated Ready In</p>
+                    <p className="font-black leading-none" style={{ fontSize: '2.2rem', background: 'linear-gradient(135deg,#fbbf24,#ea580c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                      {minsLeft} <span style={{ fontSize: '1rem' }}>min{minsLeft !== 1 ? 's' : ''}</span>
+                    </p>
+                  </>
+                )}
+              </div>
+              {minsLeft > 0 && (
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[9px] font-black tracking-widest uppercase" style={{ color: 'rgba(245,158,11,0.4)' }}>Est. time</p>
+                  <p className="text-xs font-bold" style={{ color: 'rgba(245,158,11,0.55)' }}>{order?.estimatedMinutes} min total</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* ── Live status tracker ── */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }}

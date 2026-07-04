@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useOrders() {
@@ -46,9 +46,14 @@ export function useOrders() {
   const clearNewOrder = (id)  => setNewOrderIds(prev => prev.filter(x => x !== id));
   const clearAllNew   = ()    => setNewOrderIds([]);
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, estimatedMinutes = null) => {
     try {
-      await updateDoc(doc(db, 'orders', id), { status });
+      const data = { status };
+      if (estimatedMinutes) {
+        data.estimatedMinutes = estimatedMinutes;
+        data.acceptedAt       = serverTimestamp();
+      }
+      await updateDoc(doc(db, 'orders', id), data);
       clearNewOrder(id);
     } catch (e) {
       console.error('Failed to update order status:', e);

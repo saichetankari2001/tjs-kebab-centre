@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  collection, query, orderBy, onSnapshot,
-  updateDoc, doc, addDoc, deleteDoc,
-} from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, doc, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useMenuAdmin() {
@@ -13,41 +10,46 @@ export function useMenuAdmin() {
   useEffect(() => {
     const unsubs = [
       onSnapshot(
-        query(collection(db, 'menuItems'), orderBy('categoryOrder'), orderBy('order')),
-        snap => { setMenuItems(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
-        err  => { console.warn('menuItems error:', err); setLoading(false); }
+        collection(db, 'menuItems'),
+        snap => {
+          const items = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (a.categoryOrder ?? 99) - (b.categoryOrder ?? 99) || (a.order ?? 99) - (b.order ?? 99));
+          setMenuItems(items);
+          setLoading(false);
+        },
+        err => { console.warn('menuItems error:', err.message); setLoading(false); }
       ),
       onSnapshot(
-        query(collection(db, 'drinks'), orderBy('order')),
-        snap => setDrinks(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-        err  => console.warn('drinks error:', err)
+        collection(db, 'drinks'),
+        snap => {
+          const items = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+          setDrinks(items);
+        },
+        err => console.warn('drinks error:', err.message)
       ),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
 
-  const toggleAvailable = async (collectionName, id, current) => {
-    await updateDoc(doc(db, collectionName, id), { available: !current });
-  };
+  const toggleAvailable = (collName, id, current) =>
+    updateDoc(doc(db, collName, id), { available: !current });
 
-  const updatePrice = async (collectionName, id, price) => {
+  const updatePrice = (collName, id, price) => {
     const num = parseFloat(price);
-    if (!isNaN(num) && num >= 0) {
-      await updateDoc(doc(db, collectionName, id), { price: num });
-    }
+    if (!isNaN(num) && num >= 0) updateDoc(doc(db, collName, id), { price: num });
   };
 
-  const updateName = async (collectionName, id, name) => {
-    if (name.trim()) await updateDoc(doc(db, collectionName, id), { name: name.trim() });
+  const updateName = (collName, id, name) => {
+    if (name.trim()) updateDoc(doc(db, collName, id), { name: name.trim() });
   };
 
-  const deleteItem = async (collectionName, id) => {
-    await deleteDoc(doc(db, collectionName, id));
-  };
+  const deleteItem = (collName, id) => deleteDoc(doc(db, collName, id));
 
-  // Group menu items by category
   const menuByCategory = menuItems.reduce((acc, item) => {
-    const cat = item.category || 'Other';
+    const cat = item.category || item.categoryId || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
     return acc;
