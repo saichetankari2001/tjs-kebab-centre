@@ -11,6 +11,7 @@ import OrderCard from '../components/OrderCard';
 import NewOrderAlert from '../components/NewOrderAlert';
 import OrderDetailModal from './OrderDetailScreen';
 import Particles from '../components/Particles';
+import AdminScreen from './AdminScreen';
 
 const { width } = Dimensions.get('window');
 const TABS = ['PENDING', 'ACTIVE', 'COMPLETED'];
@@ -20,6 +21,7 @@ export default function DashboardScreen({ onLogout }) {
   const [tab,          setTab]          = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [refreshing,   setRefreshing]   = useState(false);
+  const [showAdmin,    setShowAdmin]    = useState(false);
 
   // Alarm fires while there are unacknowledged new orders
   useAlarm(newOrderIds.length > 0);
@@ -80,6 +82,9 @@ export default function DashboardScreen({ onLogout }) {
               <Text style={styles.revenueLabel}>TODAY</Text>
               <Text style={styles.revenueAmount}>${todayTotal.toFixed(2)}</Text>
             </View>
+            <TouchableOpacity onPress={() => setShowAdmin(true)} style={styles.adminBtn}>
+              <Text style={styles.adminBtnText}>⚙️</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={onLogout} style={styles.signOutBtn}>
               <Text style={styles.signOutText}>↩</Text>
             </TouchableOpacity>
@@ -182,6 +187,13 @@ export default function DashboardScreen({ onLogout }) {
         </ScrollView>
       </SafeAreaView>
 
+      {/* Admin panel */}
+      {showAdmin && (
+        <View style={StyleSheet.absoluteFill}>
+          <AdminScreen onClose={() => setShowAdmin(false)} />
+        </View>
+      )}
+
       {/* Order detail modal */}
       {selectedOrder && (
         <OrderDetailModal
@@ -206,6 +218,8 @@ const styles = StyleSheet.create({
   revenueBadge:    { alignItems: 'flex-end' },
   revenueLabel:    { color: C.muted, fontSize: 9, fontWeight: '800', letterSpacing: 2 },
   revenueAmount:   { color: C.brand, fontSize: 20, fontWeight: '900' },
+  adminBtn:        { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(245,158,11,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' },
+  adminBtnText:    { fontSize: 18 },
   signOutBtn:      { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
   signOutText:     { color: C.muted, fontSize: 16 },
   statsRow:        { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 12 },
