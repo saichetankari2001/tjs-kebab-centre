@@ -8,6 +8,99 @@ import MenuSection from '../components/MenuSection';
 import CartBar from '../components/CartBar';
 import PromoSignupBanner from '../components/PromoSignupBanner';
 
+const BENTO_ITEMS = [
+  {
+    icon: '🔥',
+    title: 'Chargrilled Fresh Daily',
+    body: 'Our meats hit the grill every morning — never frozen, always smoky.',
+    span: 'col-span-2 row-span-2',
+    accent: 'rgba(234,88,12,0.18)',
+    border: 'rgba(234,88,12,0.35)',
+    glow: '0 0 60px rgba(234,88,12,0.12)',
+    big: true,
+  },
+  {
+    icon: '⚡',
+    title: 'Ready in ~15 min',
+    body: 'Order ahead, skip the wait.',
+    span: 'col-span-1',
+    accent: 'rgba(245,158,11,0.12)',
+    border: 'rgba(245,158,11,0.28)',
+    glow: '0 0 40px rgba(245,158,11,0.10)',
+  },
+  {
+    icon: '🎉',
+    title: 'Loyalty Rewards',
+    body: 'Every 5th order is FREE. Stamps tracked automatically.',
+    span: 'col-span-1',
+    accent: 'rgba(16,185,129,0.10)',
+    border: 'rgba(16,185,129,0.28)',
+    glow: '0 0 40px rgba(16,185,129,0.08)',
+  },
+  {
+    icon: '🥗',
+    title: 'Fresh Salad Bar',
+    body: 'House-made tabbouleh, hummus & garlic sauce.',
+    span: 'col-span-1',
+    accent: 'rgba(245,158,11,0.10)',
+    border: 'rgba(245,158,11,0.22)',
+    glow: 'none',
+  },
+  {
+    icon: '🌙',
+    title: 'Late Night Open',
+    body: 'Fri & Sat until 2am — the best post-night kebab in town.',
+    span: 'col-span-2',
+    accent: 'rgba(139,92,246,0.10)',
+    border: 'rgba(139,92,246,0.25)',
+    glow: '0 0 40px rgba(139,92,246,0.08)',
+  },
+];
+
+function BentoGrid() {
+  return (
+    <div className="py-12 px-4 max-w-3xl mx-auto">
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center text-[11px] font-black tracking-[0.22em] text-brand/80 uppercase mb-6"
+      >
+        ✦ Why TJ's ✦
+      </motion.p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 auto-rows-[130px]">
+        {BENTO_ITEMS.map((b, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 30, scale: 0.94 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ delay: i * 0.09, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{ scale: 1.03, y: -4, transition: { duration: 0.2 } }}
+            className={`${b.span} relative rounded-2xl overflow-hidden p-4 flex flex-col justify-between cursor-default`}
+            style={{
+              background: `linear-gradient(135deg, ${b.accent}, rgba(14,7,0,0.96))`,
+              border: `1px solid ${b.border}`,
+              boxShadow: b.glow,
+            }}
+          >
+            {/* Top edge glow line */}
+            <div className="absolute top-0 left-6 right-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${b.border}, transparent)` }} />
+            {/* Shine */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%)' }} />
+
+            <span className={b.big ? 'text-4xl' : 'text-2xl'}>{b.icon}</span>
+            <div>
+              <p className={`text-white font-black leading-tight ${b.big ? 'text-lg mb-1' : 'text-sm mb-0.5'}`}>{b.title}</p>
+              <p className={`leading-snug ${b.big ? 'text-sm text-brand/70' : 'text-xs text-muted'}`}>{b.body}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const DISHES_3D = [
   { url: '/images/HSP.jpg',                        label: 'HSP',             desc: 'Halal Snack Pack',        tag: '🔥 Most Popular' },
   { url: '/images/chicken-doner-kebab.jpg',        label: 'Kebab Wrap',      desc: 'Chargrilled & Fresh',     tag: '⭐ Customer Fave' },
@@ -134,6 +227,9 @@ export default function HomePage() {
 
       {/* ── 3D Signature Dishes Strip ── */}
       <SignatureDishes3D />
+
+      {/* ── Bento feature grid ── */}
+      <BentoGrid />
 
       {/* ── Live ticker bar ── */}
       <div

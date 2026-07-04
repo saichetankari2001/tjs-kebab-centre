@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, User } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useSpring } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +9,17 @@ export default function Navbar() {
   const { itemCount } = useCart();
   const { user, customer } = useAuth();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Scroll progress bar
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
 
   return (
     <motion.header
@@ -17,15 +28,35 @@ export default function Navbar() {
       transition={{ duration: 0.3 }}
       className="sticky top-0 z-50 h-16 flex items-center justify-between px-5 md:px-8"
       style={{
-        background: 'linear-gradient(180deg, rgba(6,4,0,0.98) 0%, rgba(10,6,0,0.96) 100%)',
-        borderBottom: '1px solid rgba(245,158,11,0.15)',
-        boxShadow: '0 1px 0 rgba(245,158,11,0.08), 0 4px 24px rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(12px)',
+        background: scrolled
+          ? 'rgba(4,2,0,0.97)'
+          : 'linear-gradient(180deg, rgba(6,4,0,0.98) 0%, rgba(10,6,0,0.96) 100%)',
+        borderBottom: scrolled ? '1px solid rgba(245,158,11,0.22)' : '1px solid rgba(245,158,11,0.12)',
+        boxShadow: scrolled
+          ? '0 1px 0 rgba(245,158,11,0.12), 0 8px 40px rgba(0,0,0,0.7)'
+          : '0 1px 0 rgba(245,158,11,0.06), 0 4px 24px rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(18px)',
+        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
       }}
     >
-      <button onClick={() => navigate('/')} className="flex items-center gap-2 focus:outline-none">
-        <span className="font-display text-2xl tracking-wide text-white leading-none">
-          TJ'S <span className="text-brand">KEBAB</span>
+      {/* Scroll progress line */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[2px] origin-left pointer-events-none"
+        style={{
+          scaleX,
+          background: 'linear-gradient(90deg, #fbbf24, #f59e0b, #ea580c)',
+        }}
+      />
+
+      <button onClick={() => navigate('/')} className="flex items-center gap-2 focus:outline-none group">
+        <span className="font-display text-2xl tracking-wide text-white leading-none transition-all">
+          TJ'S{' '}
+          <span
+            className="text-brand"
+            style={{ textShadow: scrolled ? '0 0 20px rgba(245,158,11,0.5)' : 'none', transition: 'text-shadow 0.3s' }}
+          >
+            KEBAB
+          </span>
         </span>
         <span className="hidden sm:block text-[10px] text-muted tracking-widest uppercase mt-0.5 font-medium">
           Centre
@@ -62,19 +93,29 @@ export default function Navbar() {
           </Link>
         )}
 
-        <button
+        <motion.button
           data-cart-btn
           onClick={() => navigate('/cart')}
-          className="relative flex items-center gap-2 bg-brand text-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-lit transition-colors active:scale-95"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.93 }}
+          className="relative flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm text-surface transition-all"
+          style={{
+            background: 'linear-gradient(135deg,#fbbf24,#ea580c)',
+            boxShadow: '0 0 24px rgba(245,158,11,0.35)',
+          }}
         >
           <ShoppingBag size={16} strokeWidth={2.5} />
           <span className="hidden sm:inline">Order</span>
           {itemCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-white text-surface text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-2 -right-2 bg-white text-surface text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow"
+            >
               {itemCount > 9 ? '9+' : itemCount}
-            </span>
+            </motion.span>
           )}
-        </button>
+        </motion.button>
       </div>
     </motion.header>
   );

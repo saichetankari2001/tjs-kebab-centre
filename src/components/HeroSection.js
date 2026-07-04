@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { ChevronRight, Clock, Star } from 'lucide-react';
 import { HERO_PHOTO } from '../data/menu';
 
@@ -27,6 +27,16 @@ function todayHours() {
 // Cycling "dish of the moment" label
 const DISHES = ['Chargrilled Lamb Wrap', 'HSP Large Special', 'Mixed Chicken Skewers', 'Signature Salad Bowl'];
 
+// Floating ember particles
+const EMBERS = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  duration: 4 + Math.random() * 6,
+  delay: Math.random() * 8,
+  size: 2 + Math.random() * 3,
+  opacity: 0.15 + Math.random() * 0.35,
+}));
+
 export default function HeroSection({ onCtaClick }) {
   const sectionRef   = useRef(null);
   const { scrollY }  = useScroll();
@@ -43,9 +53,23 @@ export default function HeroSection({ onCtaClick }) {
     return () => clearInterval(t);
   }, []);
 
+  // Cursor-tracking ambient glow
+  const cursorX = useMotionValue(50);
+  const cursorY = useMotionValue(50);
+  const springX = useSpring(cursorX, { stiffness: 60, damping: 20 });
+  const springY = useSpring(cursorY, { stiffness: 60, damping: 20 });
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = sectionRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    cursorX.set(((e.clientX - rect.left) / rect.width) * 100);
+    cursorY.set(((e.clientY - rect.top)  / rect.height) * 100);
+  }, [cursorX, cursorY]);
+
   return (
     <section
       ref={sectionRef}
+      onMouseMove={handleMouseMove}
       className="relative w-full overflow-hidden flex flex-col justify-end"
       style={{ minHeight: '86vh' }}
     >
@@ -73,6 +97,48 @@ export default function HeroSection({ onCtaClick }) {
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 82% 38%, rgba(234,88,12,0.28) 0%, transparent 52%)' }} />
       {/* Vignette edges */}
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
+
+      {/* ── CURSOR-TRACKING GLOW ── */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: useTransform(
+            [springX, springY],
+            ([gx, gy]) =>
+              `radial-gradient(ellipse 55% 45% at ${gx}% ${gy}%, rgba(245,158,11,0.14) 0%, rgba(234,88,12,0.07) 40%, transparent 70%)`
+          ),
+        }}
+      />
+
+      {/* ── FLOATING EMBERS ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {EMBERS.map(e => (
+          <motion.div
+            key={e.id}
+            className="absolute rounded-full"
+            style={{
+              left: `${e.x}%`,
+              bottom: '-8px',
+              width: e.size,
+              height: e.size,
+              background: `radial-gradient(circle, rgba(245,158,11,${e.opacity}) 0%, rgba(234,88,12,${e.opacity * 0.5}) 60%, transparent 100%)`,
+              filter: 'blur(0.5px)',
+            }}
+            animate={{
+              y: [0, -(320 + Math.random() * 200)],
+              x: [0, (Math.random() - 0.5) * 60],
+              opacity: [0, e.opacity, e.opacity * 0.6, 0],
+              scale: [0.4, 1, 0.6],
+            }}
+            transition={{
+              duration: e.duration,
+              delay: e.delay,
+              repeat: Infinity,
+              ease: 'easeOut',
+            }}
+          />
+        ))}
+      </div>
 
       {/* ── CINEMATIC SCAN LINE ── */}
       <motion.div
