@@ -80,7 +80,7 @@ export default function CustomiseModal({ item, category, onClose }) {
           </Section>
         )}
         {category.hasSauce && (
-          <Section title="Sauce Choices" emoji="🫙" note="Garlic & Chilli +$3 · All others +$1">
+          <Section title="Sauce Choices" emoji="🫙" note="All free — choose as many as you like">
             {SAUCE_OPTIONS.map(s => <Pill key={s.id} label={s.name} selected={selectedSauces[s.id]||false} onClick={()=>setSelectedSauces(p=>({...p,[s.id]:!p[s.id]}))} price={s.price} />)}
           </Section>
         )}

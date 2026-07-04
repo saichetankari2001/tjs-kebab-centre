@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Minus, Trash2, Tag } from 'lucide-react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useCart } from '../context/CartContext';
 import { getItemThumbnail } from '../utils/itemThumbnail';
@@ -176,12 +176,13 @@ export default function CartPage() {
   const [promoError, setPromoError] = useState('');
 
   useEffect(() => {
-    getDocs(query(collection(db, 'drinks'), orderBy('order')))
+    getDocs(collection(db, 'drinks'))
       .then((snap) =>
         setDrinks(
           snap.docs
             .map((d) => ({ id: d.id, ...d.data() }))
             .filter((d) => d.available !== false)
+            .sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
         )
       )
       .catch(() => {});

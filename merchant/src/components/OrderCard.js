@@ -113,15 +113,31 @@ export default function OrderCard({ order, isNew, onAccept, onPrepare, onReady, 
           </View>
 
           {/* Items */}
-          {order.items?.slice(0, 3).map((item, i) => (
-            <View key={i} style={styles.itemRow}>
-              <Text style={styles.itemQty}>{item.qty}×</Text>
-              <Text style={styles.itemName} numberOfLines={1}>{item.displayName || item.name}</Text>
-              <Text style={styles.itemPrice}>${(item.price * item.qty).toFixed(2)}</Text>
-            </View>
-          ))}
-          {(order.items?.length || 0) > 3 && (
-            <Text style={styles.moreItems}>+{order.items.length - 3} more item{order.items.length - 3 !== 1 ? 's' : ''}</Text>
+          {order.items?.slice(0, 4).map((item, i) => {
+            const c = item.customisations || {};
+            const tags = [
+              c.size        ? `Size: ${c.size}`            : null,
+              c.extraMeat   ? `+ ${c.extraMeat}`           : null,
+              c.sauces?.length  ? `Sauce: ${c.sauces.join(', ')}` : null,
+              c.salads?.length  ? `Salad: ${c.salads.join(', ')}` : null,
+              c.extras?.length  ? `Extra: ${c.extras.join(', ')}` : null,
+              c.note        ? `Note: "${c.note}"`          : null,
+            ].filter(Boolean);
+            return (
+              <View key={i} style={styles.itemBlock}>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemQty}>{item.qty}×</Text>
+                  <Text style={styles.itemName} numberOfLines={1}>{item.displayName || item.name}</Text>
+                  <Text style={styles.itemPrice}>${(item.price * item.qty).toFixed(2)}</Text>
+                </View>
+                {tags.map((tag, ti) => (
+                  <Text key={ti} style={styles.itemTag}>  {tag}</Text>
+                ))}
+              </View>
+            );
+          })}
+          {(order.items?.length || 0) > 4 && (
+            <Text style={styles.moreItems}>+{order.items.length - 4} more item{order.items.length - 4 !== 1 ? 's' : ''}</Text>
           )}
 
           {/* Actions */}
@@ -192,7 +208,9 @@ const styles = StyleSheet.create({
   customer:   { marginBottom: 10 },
   customerName:{ color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 2 },
   customerSub: { color: C.muted, fontSize: 12 },
-  itemRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 3 },
+  itemBlock:  { marginVertical: 3 },
+  itemRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemTag:    { color: C.muted, fontSize: 11, marginTop: 2, marginLeft: 24 },
   itemQty:    { color: C.brand, fontSize: 13, fontWeight: '800', width: 24 },
   itemName:   { color: C.text2, fontSize: 13, flex: 1 },
   itemPrice:  { color: C.muted, fontSize: 12 },

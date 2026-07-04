@@ -75,9 +75,8 @@ export default function ItemModal({ item, isOpen, onClose }) {
     setSelectedSalads((p) => p.includes(id) ? p.filter((s) => s !== id) : [...p, id]);
 
   const sauceLabel = () => {
-    if (selectedSauces.length === 0) return 'First sauce free';
-    if (selectedSauces.length === 1) return '1 sauce (free)';
-    return `${selectedSauces.length} sauces (1 free + ${selectedSauces.length - 1} × $2)`;
+    if (selectedSauces.length === 0) return 'All sauces free — choose as many as you like';
+    return `${selectedSauces.length} sauce${selectedSauces.length > 1 ? 's' : ''} selected (free)`;
   };
 
   const handleAdd = () => {

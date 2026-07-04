@@ -17,6 +17,7 @@ const BENTO_ITEMS = [
     accent: 'rgba(234,88,12,0.18)',
     border: 'rgba(234,88,12,0.35)',
     glow: '0 0 60px rgba(234,88,12,0.12)',
+    image: '/images/chicken-doner-kebab.jpg',
     big: true,
   },
   {
@@ -84,13 +85,20 @@ function BentoGrid() {
               boxShadow: b.glow,
             }}
           >
+            {/* Background food photo for big card */}
+            {b.image && (
+              <>
+                <img src={b.image} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.28, filter: 'saturate(1.4) brightness(0.7)' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,3,0,0.97) 0%, rgba(6,3,0,0.55) 50%, rgba(6,3,0,0.3) 100%)' }} />
+              </>
+            )}
             {/* Top edge glow line */}
             <div className="absolute top-0 left-6 right-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${b.border}, transparent)` }} />
             {/* Shine */}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%)' }} />
 
-            <span className={b.big ? 'text-4xl' : 'text-2xl'}>{b.icon}</span>
-            <div>
+            <span className={`relative z-10 ${b.big ? 'text-4xl' : 'text-2xl'}`}>{b.icon}</span>
+            <div className="relative z-10">
               <p className={`text-white font-black leading-tight ${b.big ? 'text-lg mb-1' : 'text-sm mb-0.5'}`}>{b.title}</p>
               <p className={`leading-snug ${b.big ? 'text-sm text-brand/70' : 'text-xs text-muted'}`}>{b.body}</p>
             </div>

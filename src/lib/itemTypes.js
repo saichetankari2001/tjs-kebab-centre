@@ -53,8 +53,8 @@ export function getItemTypeConfig(itemType) {
   };
 }
 
-// EXTRA_SAUCE_PRICE: charged per sauce beyond the first free one
-export const EXTRA_SAUCE_PRICE = 2;
+// Sauces are always free — customer picks which sauces they want at no charge
+export const EXTRA_SAUCE_PRICE = 0;
 export const EXTRA_MEAT_PRICE  = 2;
 
 // Keep legacy constants as aliases so ItemModal.js doesn't break until it is updated
