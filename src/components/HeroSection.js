@@ -268,18 +268,39 @@ export default function HeroSection({ onCtaClick }) {
           </span>
         </motion.div>
 
-        {/* 3D Animated Title */}
-        <motion.h1
-          className="font-display leading-none tracking-wide mb-4"
-          initial={{ opacity: 0, y: 50, rotateX: 18, perspective: 600 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ delay: 0.2, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-          style={{ transformOrigin: 'bottom left' }}
-        >
-          <span className="text-white block" style={{ fontSize: 'clamp(3.2rem,10vw,7.5rem)', textShadow: '0 4px 0 rgba(0,0,0,0.6), 0 0 60px rgba(0,0,0,0.8)' }}>TJ'S</span>
-          <span className="text-gradient-brand block" style={{ fontSize: 'clamp(3.8rem,12vw,9rem)', textShadow: '0 4px 0 rgba(180,90,0,0.4), 0 0 80px rgba(245,158,11,0.30)' }}>KEBAB</span>
-          <span className="text-white block" style={{ fontSize: 'clamp(2.2rem,7vw,5.5rem)', textShadow: '0 4px 0 rgba(0,0,0,0.6)' }}>CENTRE</span>
-        </motion.h1>
+        {/* 3D Animated Title — character-by-character spring */}
+        <h1 className="font-display leading-none tracking-wide mb-4" style={{ transformOrigin: 'bottom left' }}>
+          {[
+            { word: "TJ'S",   color: '#ffffff',  size: 'clamp(3.2rem,10vw,7.5rem)', shadow: '0 4px 0 rgba(0,0,0,0.6)' },
+            { word: 'KEBAB',  color: null,       size: 'clamp(3.8rem,12vw,9rem)',   shadow: '0 4px 0 rgba(180,90,0,0.4)', gradient: true },
+            { word: 'CENTRE', color: '#ffffff',  size: 'clamp(2.2rem,7vw,5.5rem)', shadow: '0 4px 0 rgba(0,0,0,0.6)' },
+          ].map((line, li) => (
+            <div key={li} className="block overflow-hidden" style={{ lineHeight: 1.02 }}>
+              {line.word.split('').map((ch, ci) => (
+                <motion.span
+                  key={ci}
+                  className={line.gradient ? 'text-gradient-brand' : ''}
+                  style={{
+                    display: 'inline-block',
+                    fontSize: line.size,
+                    color: line.color ?? undefined,
+                    textShadow: line.shadow,
+                    whiteSpace: 'pre',
+                  }}
+                  initial={{ y: '110%', opacity: 0, rotateX: 40 }}
+                  animate={{ y: 0, opacity: 1, rotateX: 0 }}
+                  transition={{
+                    delay: 0.15 + li * 0.12 + ci * 0.035,
+                    duration: 0.65,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  {ch}
+                </motion.span>
+              ))}
+            </div>
+          ))}
+        </h1>
 
         {/* Subtitle with cycling dish name */}
         <motion.div

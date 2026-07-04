@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import MenuItemRow from './MenuItemRow';
 import ItemModal from './ItemModal';
 import { getCategoryPhoto } from '../utils/itemThumbnail';
@@ -11,6 +11,10 @@ const containerVariants = {
 
 export default function MenuSection({ category, items, sectionRef, onAdd }) {
   const [modalItem, setModalItem] = useState(null);
+  const headerRef = useRef(null);
+
+  const { scrollYProgress } = useScroll({ target: headerRef, offset: ['start end', 'end start'] });
+  const imgY = useTransform(scrollYProgress, [0, 1], ['-12%', '12%']);
 
   const handleAdd = (item) => {
     const noModal = ['snack', 'dip', 'drink'].includes(item.itemType) && !item.sizePrices;
@@ -24,19 +28,20 @@ export default function MenuSection({ category, items, sectionRef, onAdd }) {
     <section ref={sectionRef} id={`cat-${category.id}`} className="mb-6">
       {/* ── Cinematic category header ── */}
       <motion.div
+        ref={headerRef}
         initial={{ opacity: 0, y: 14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         className="relative overflow-hidden rounded-t-xl h-40 md:h-[220px]"
       >
-        {/* Background photo — warm cinematic filter, no animation */}
-        <img
+        {/* Background photo — parallax scroll */}
+        <motion.img
           src={photoSrc}
           alt={category.name}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full object-cover"
           loading="lazy"
-          style={{ filter: 'saturate(1.35) contrast(1.08) brightness(0.8)' }}
+          style={{ y: imgY, height: '130%', top: '-15%', filter: 'saturate(1.35) contrast(1.08) brightness(0.8)' }}
           onError={(e) => {
             const fallback = 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80';
             if (e.target.src !== fallback) e.target.src = fallback;
