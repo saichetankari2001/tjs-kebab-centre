@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
 import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
+import CustomCursor from '../components/CustomCursor';
 
 export default function AdminApp() {
   const [user, setUser] = useState(null);
@@ -13,11 +14,68 @@ export default function AdminApp() {
     return unsub;
   }, []);
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--warm-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ display: 'inline-block', width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--brand)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-    </div>
-  );
+  return (
+    <>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes adminPulse { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
 
-  return user ? <AdminDashboard /> : <AdminLogin />;
+        /* HUD scan line — sweeps from top to bottom of its container */
+        @keyframes hudScanLine {
+          0%   { top: -2px; opacity: 0; }
+          4%   { opacity: 1; }
+          92%  { opacity: 0.85; }
+          100% { top: calc(100% + 2px); opacity: 0; }
+        }
+
+        /* Sidebar vertical scan */
+        @keyframes sidebarScan {
+          0%   { top: 0%; opacity: 0; }
+          4%   { opacity: 0.55; }
+          92%  { opacity: 0.35; }
+          100% { top: 100%; opacity: 0; }
+        }
+
+        /* HUD text pulse */
+        @keyframes hudPulse {
+          0%,100% { opacity: 0.22; }
+          50%     { opacity: 0.55; }
+        }
+
+        /* Concentric ambient rings expanding outward */
+        @keyframes ringPulse {
+          0%   { transform: scale(0.85); opacity: 0.45; }
+          100% { transform: scale(1.9); opacity: 0; }
+        }
+
+        /* Horizontal data stream lines scrolling across */
+        @keyframes dataStream {
+          0%   { transform: translateX(-120%); opacity: 0; }
+          6%   { opacity: 1; }
+          88%  { opacity: 0.65; }
+          100% { transform: translateX(130vw); opacity: 0; }
+        }
+
+        @keyframes holoshimmerAdmin {
+          from { background-position: 0% center; }
+          to   { background-position: 200% center; }
+        }
+        .admin-holo {
+          background: linear-gradient(90deg, #fbbf24 0%, #f97316 20%, #ec4899 40%, #8b5cf6 60%, #06b6d4 80%, #fbbf24 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: holoshimmerAdmin 4s linear infinite;
+        }
+      `}</style>
+      <CustomCursor />
+      {loading ? (
+        <div style={{ minHeight: '100vh', background: '#060300', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <div style={{ width: 44, height: 44, border: '3px solid rgba(245,158,11,0.15)', borderTopColor: '#f59e0b', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          <div style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)', fontFamily: 'Inter, sans-serif' }}>Authenticating</div>
+        </div>
+      ) : user ? <AdminDashboard /> : <AdminLogin />}
+    </>
+  );
 }

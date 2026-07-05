@@ -1,32 +1,237 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, orderBy, increment } from 'firebase/firestore';
 import QRCode from 'react-qr-code';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
-
-const TABS = ['📊 Dashboard', '🍽️ Menu', '📦 Orders', '🎉 Promotions', '🥤 Drinks', '👥 Staff', '📱 QR Code', '📢 Blast', '📬 Subscribers'];
+import LavaScene from '../components/LavaScene';
+import AdminAssistant from '../components/AdminAssistant';
 
 const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
 
+const NAV_ITEMS = [
+  { icon: '⚡', label: 'Overview',    idx: 0 },
+  { icon: '🍽️', label: 'Menu',        idx: 1 },
+  { icon: '📦', label: 'Orders',      idx: 2 },
+  { icon: '🎉', label: 'Promotions',  idx: 3 },
+  { icon: '🥤', label: 'Drinks',      idx: 4 },
+  { icon: '👥', label: 'Staff',       idx: 5 },
+  { icon: '📱', label: 'QR Code',     idx: 6 },
+  { icon: '📢', label: 'Blast',       idx: 7 },
+  { icon: '📬', label: 'Subscribers', idx: 8 },
+];
+
+const STATUS_COLORS = {
+  pending:   '#ff8c42',
+  confirmed: '#f59e0b',
+  preparing: '#4a9eff',
+  ready:     '#4ade80',
+  delivered: '#4ade80',
+  cancelled: '#ff6b6b',
+};
+
+// ── HUD tilt card — 3D tilt with corner brackets ─────────────────────────────
+function HUDCard({ children, accent = '#f59e0b', style }) {
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const rotX = useSpring(useTransform(rawY, [-0.5, 0.5], [6, -6]), { stiffness: 280, damping: 38 });
+  const rotY = useSpring(useTransform(rawX, [-0.5, 0.5], [-6, 6]), { stiffness: 280, damping: 38 });
+
+  return (
+    <motion.div
+      onMouseMove={e => {
+        const r = e.currentTarget.getBoundingClientRect();
+        rawX.set((e.clientX - r.left) / r.width - 0.5);
+        rawY.set((e.clientY - r.top)  / r.height - 0.5);
+      }}
+      onMouseLeave={() => { rawX.set(0); rawY.set(0); }}
+      style={{ rotateX: rotX, rotateY: rotY, transformStyle: 'preserve-3d', perspective: 900, ...style }}
+    >
+      <div style={{
+        background: 'rgba(2,6,18,0.78)', border: `1px solid ${accent}30`,
+        borderRadius: 3, padding: '22px 24px', position: 'relative', overflow: 'hidden',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        boxShadow: `0 0 0 1px ${accent}12, 0 12px 40px rgba(0,0,0,0.45)`,
+        height: '100%', boxSizing: 'border-box',
+      }}>
+        {/* Corner brackets */}
+        {[[0,'top','left'],[1,'top','right'],[2,'bottom','left'],[3,'bottom','right']].map(([i,v,h]) => (
+          <div key={i} style={{ position: 'absolute', [v]: -1, [h]: -1, width: 14, height: 14, zIndex: 5, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 11, height: 1.5, background: accent, boxShadow: `0 0 6px ${accent}cc` }} />
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 1.5, height: 11, background: accent, boxShadow: `0 0 6px ${accent}cc` }} />
+          </div>
+        ))}
+        {/* Ambient top glow */}
+        <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: 1, background: `linear-gradient(90deg, transparent, ${accent}55, transparent)`, pointerEvents: 'none' }} />
+        {children}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── HUD Sidebar ───────────────────────────────────────────────────────────────
+function Sidebar({ tab, setTab, onSignOut, menuItems, seeding, onSeed, onClean, onAssignTypes }) {
+  return (
+    <div style={{
+      position: 'fixed', left: 0, top: 0, bottom: 0, width: 240, zIndex: 200,
+      background: 'rgba(3,2,0,0.97)',
+      backdropFilter: 'blur(28px)',
+      WebkitBackdropFilter: 'blur(28px)',
+      borderRight: '1px solid rgba(245,158,11,0.12)',
+      display: 'flex', flexDirection: 'column',
+      boxShadow: '4px 0 48px rgba(0,0,0,0.7)',
+      overflow: 'hidden',
+    }}>
+      {/* Top amber edge glow */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent)', zIndex: 10 }} />
+
+      {/* Vertical scanning line */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, height: 1, zIndex: 5, pointerEvents: 'none',
+        background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.45), transparent)',
+        boxShadow: '0 0 12px rgba(245,158,11,0.3)',
+        animation: 'sidebarScan 7s ease-in-out infinite',
+      }} />
+
+      {/* Logo / brand */}
+      <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(245,158,11,0.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <div style={{
+            width: 40, height: 40, flexShrink: 0,
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%)',
+            borderRadius: 2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 900, color: '#0d0600',
+            fontFamily: '"Playfair Display", Georgia, serif',
+            boxShadow: '0 0 20px rgba(245,158,11,0.3)',
+          }}>TJ</div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#f5ead0', lineHeight: 1.2, fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>ADMIN PANEL</div>
+            <div style={{ fontSize: 8, letterSpacing: 2.5, textTransform: 'uppercase', color: '#f59e0b', fontWeight: 700, marginTop: 3, fontFamily: '"Courier New", monospace', opacity: 0.7 }}>MGMT CONSOLE</div>
+          </div>
+        </div>
+
+        {/* Status row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 10 }}>
+          <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+          <span style={{ fontSize: 8, letterSpacing: 2, color: '#4ade80', fontFamily: '"Courier New", monospace' }}>SYS ONLINE</span>
+          <span style={{ fontSize: 8, color: 'rgba(245,158,11,0.2)', fontFamily: '"Courier New", monospace', marginLeft: 4 }}>{'//'} LIVE</span>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto', scrollbarWidth: 'none' }}>
+        {NAV_ITEMS.map(({ icon, label, idx }) => {
+          const active = tab === idx;
+          return (
+            <motion.button
+              key={idx}
+              onClick={() => setTab(idx)}
+              whileHover={{ x: active ? 0 : 4 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 11,
+                padding: '9px 12px', borderRadius: 2, border: 'none',
+                background: active ? 'rgba(245,158,11,0.08)' : 'transparent',
+                color: active ? '#fbbf24' : '#9c8a72',
+                fontWeight: active ? 700 : 500, fontSize: 13, fontFamily: 'Inter, sans-serif',
+                marginBottom: 1, textAlign: 'left', position: 'relative', overflow: 'hidden',
+                borderLeft: active ? '2px solid #f59e0b' : '2px solid transparent',
+                boxShadow: active ? '4px 0 20px rgba(245,158,11,0.06) inset' : 'none',
+                transition: 'background 0.18s, color 0.18s, border-left-color 0.18s',
+              }}
+            >
+              {/* Active left glow edge */}
+              {active && (
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: '#f59e0b', boxShadow: '0 0 12px rgba(245,158,11,0.8)' }} />
+              )}
+
+              <span style={{ fontSize: 15, flexShrink: 0 }}>{icon}</span>
+              <span style={{ flex: 1, fontFamily: active ? '"Courier New", monospace' : 'Inter, sans-serif', letterSpacing: active ? 0.8 : 0 }}>{label}</span>
+
+              {active && (
+                <motion.div
+                  layoutId="hud-active-dot"
+                  style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 10px rgba(245,158,11,0.9)', flexShrink: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
+      </nav>
+
+      {/* Utility + sign out */}
+      <div style={{ padding: '10px 8px 14px', borderTop: '1px solid rgba(245,158,11,0.07)' }}>
+        {menuItems.length === 0 && (
+          <button onClick={onSeed} disabled={seeding}
+            style={{ width: '100%', padding: '7px 10px', borderRadius: 2, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.06)', color: '#f59e0b', fontSize: 11, fontWeight: 700, marginBottom: 4, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}
+          >{seeding ? '⏳ SEEDING...' : '▸ SEED DB'}</button>
+        )}
+        <button onClick={onClean}
+          style={{ width: '100%', padding: '7px 10px', borderRadius: 2, border: '1px solid rgba(74,222,128,0.15)', background: 'rgba(74,222,128,0.04)', color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 4, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}
+        >▸ CLEAN DUPS</button>
+        <button onClick={onAssignTypes}
+          style={{ width: '100%', padding: '7px 10px', borderRadius: 2, border: '1px solid rgba(245,158,11,0.15)', background: 'rgba(245,158,11,0.04)', color: '#fbbf24', fontSize: 11, fontWeight: 700, marginBottom: 8, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}
+        >▸ SET TYPES</button>
+        <button onClick={onSignOut}
+          style={{ width: '100%', padding: '9px 10px', borderRadius: 2, border: '1px solid rgba(255,107,107,0.18)', background: 'rgba(255,107,107,0.04)', color: '#ff8888', fontSize: 12, fontWeight: 700, fontFamily: '"Courier New", monospace', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: 1 }}
+        ><span>⇥</span><span>SIGN OUT</span></button>
+      </div>
+
+      {/* Bottom amber edge */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)' }} />
+    </div>
+  );
+}
+
+const pageVariants = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] } },
+  exit:    { opacity: 0, y: -8, transition: { duration: 0.2 } },
+};
+
+// ── Cursor spotlight ──────────────────────────────────────────────────────────
+function CursorSpotlight() {
+  const x = useMotionValue(-1000);
+  const y = useMotionValue(-1000);
+  const sx = useSpring(x, { stiffness: 120, damping: 28 });
+  const sy = useSpring(y, { stiffness: 120, damping: 28 });
+
+  useEffect(() => {
+    const move = (e) => { x.set(e.clientX); y.set(e.clientY); };
+    window.addEventListener('mousemove', move);
+    return () => window.removeEventListener('mousemove', move);
+  }, [x, y]);
+
+  const bg = useTransform([sx, sy], ([cx, cy]) =>
+    `radial-gradient(700px circle at ${cx}px ${cy}px, rgba(245,158,11,0.045) 0%, transparent 60%)`
+  );
+
+  return <motion.div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: bg }} />;
+}
+
+// ── Main dashboard ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [tab, setTab] = useState(0);
-  const [menuItems, setMenuItems] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [tab, setTab]               = useState(0);
+  const [menuItems, setMenuItems]   = useState([]);
+  const [orders, setOrders]         = useState([]);
   const [promotions, setPromotions] = useState([]);
-  const [drinks, setDrinks] = useState([]);
-  const [editItem, setEditItem] = useState(null);
-  const [showAddItem, setShowAddItem] = useState(false);
+  const [drinks, setDrinks]         = useState([]);
+  const [editItem, setEditItem]     = useState(null);
+  const [showAddItem, setShowAddItem]   = useState(false);
   const [showAddPromo, setShowAddPromo] = useState(false);
-  const [seeding, setSeeding] = useState(false);
-  const [qrUrl, setQrUrl] = useState('https://tjs-kebab-centre.netlify.app');
-  const [blastMsg, setBlastMsg] = useState('');
+  const [seeding, setSeeding]       = useState(false);
+  const [qrUrl, setQrUrl]           = useState('https://tjs-kebab-centre.netlify.app');
+  const [blastMsg, setBlastMsg]     = useState('');
   const [blastSubject, setBlastSubject] = useState('');
   const [blastChannels, setBlastChannels] = useState(['email']);
-  const [blasting, setBlasting] = useState(false);
-  const [blastResult, setBlastResult] = useState(null);
-  const [subscribers, setSubscribers] = useState([]);
+  const [blasting, setBlasting]     = useState(false);
+  const [blastResult, setBlastResult]   = useState(null);
+  const [subscribers, setSubscribers]   = useState([]);
   const priceTimers = useRef({});
 
   useEffect(() => {
@@ -40,11 +245,12 @@ export default function AdminDashboard() {
     return () => unsubs.forEach(u => u());
   }, []);
 
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const seedDatabase = async () => {
     if (!window.confirm('This will add all menu items to the database. Continue?')) return;
     setSeeding(true);
     try {
-      for (const item of SEED_MENU) await addDoc(collection(db, 'menuItems'), item);
+      for (const item of SEED_MENU)  await addDoc(collection(db, 'menuItems'), item);
       for (const drink of SEED_DRINKS) await addDoc(collection(db, 'drinks'), drink);
       alert('✅ Database seeded successfully!');
     } catch (e) { alert('Error: ' + e.message); }
@@ -75,48 +281,32 @@ export default function AdminDashboard() {
 
   const updateOrderStatus = async (id, status) => {
     await updateDoc(doc(db, 'orders', id), { status });
-
-    // Increment loyalty stamps when order is marked ready
     if (status === 'ready') {
       const order = orders.find(o => o.id === id);
       if (order?.customerId) {
-        const custRef = doc(db, 'customers', order.customerId);
+        const custRef  = doc(db, 'customers', order.customerId);
         const custSnap = await getDoc(custRef);
         if (custSnap.exists()) {
           const currentStamps = custSnap.data().stamps ?? 0;
           const newStamps = currentStamps + 1;
-          await updateDoc(custRef, {
-            stamps:            newStamps >= 5 ? 0 : newStamps,
-            totalOrders:       increment(1),
-            freeOrderEligible: newStamps >= 5,
-          });
+          await updateDoc(custRef, { stamps: newStamps >= 5 ? 0 : newStamps, totalOrders: increment(1), freeOrderEligible: newStamps >= 5 });
         }
       }
     }
-
-    // Send status-change email/SMS via backend (fire-and-forget)
     const order = orders.find(o => o.id === id);
-    const notifyStatuses = ['confirmed', 'preparing', 'ready'];
-    if (order && notifyStatuses.includes(status)) {
+    if (order && ['confirmed', 'preparing', 'ready'].includes(status)) {
       const email = order.customerEmail || order.customer?.email;
       const phone = order.customerPhone || order.customer?.phone;
       if (email || phone) {
         fetch(`${API_URL}/api/notify/order-status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to:        email  ?? null,
-            phone:     phone  ?? null,
-            firstName: order.customer?.firstName || order.customerName?.split(' ')[0] || 'there',
-            orderId:   id,
-            status,
-          }),
+          body: JSON.stringify({ to: email ?? null, phone: phone ?? null, firstName: order.customer?.firstName || order.customerName?.split(' ')[0] || 'there', orderId: id, status }),
         }).catch(() => {});
       }
     }
   };
 
-  // ── Inline price editing (debounced 800ms) ──────────────────────────
   const handlePriceChange = (id, newPrice) => {
     setMenuItems(prev => prev.map(item => item.id === id ? { ...item, price: parseFloat(newPrice) || item.price } : item));
     clearTimeout(priceTimers.current[id]);
@@ -146,468 +336,413 @@ export default function AdminDashboard() {
     }, 800);
   };
 
-  const toggleItem = async (id, available) => {
-    await updateDoc(doc(db, 'menuItems', id), { available: !available });
-  };
+  const toggleItem   = async (id, available) => updateDoc(doc(db, 'menuItems', id), { available: !available });
+  const deleteItem   = async (id) => { if (window.confirm('Delete this item?')) await deleteDoc(doc(db, 'menuItems', id)); };
+  const togglePromo  = async (id, active)   => updateDoc(doc(db, 'promotions', id), { active: !active });
 
-  const deleteItem = async (id) => {
-    if (window.confirm('Delete this item?')) await deleteDoc(doc(db, 'menuItems', id));
-  };
-
-  const togglePromo = async (id, active) => {
-    await updateDoc(doc(db, 'promotions', id), { active: !active });
-  };
-
-  // One-time migration: assigns itemType to all menuItems based on category name
   const assignItemTypes = async () => {
     if (!window.confirm('This will assign itemType to all menu items based on their category. Continue?')) return;
     const { collection: col, getDocs: gd, updateDoc: upd, doc: d } = await import('firebase/firestore');
     const snap = await gd(col(db, 'menuItems'));
-
-    const categoryToItemType = {
-      'wraps': 'wrap',
-      'wrap': 'wrap',
-      'hsp': 'hsp',
-      'halal snack pack': 'hsp',
-      'rice bowls': 'ricebowl',
-      'rice bowl': 'ricebowl',
-      'salad bowls': 'salad',
-      'salad bowl': 'salad',
-      'bowl salad': 'salad',
-      'skewers': 'skewer',
-      'skewer': 'skewer',
-      'chargrilled': 'chargrilled',
-      'snacks': 'snack',
-      'chips': 'snack',
-      'drinks': 'drink',
-      'drink': 'drink',
-    };
-
+    const categoryToItemType = { 'wraps': 'wrap', 'wrap': 'wrap', 'hsp': 'hsp', 'halal snack pack': 'hsp', 'rice bowls': 'ricebowl', 'rice bowl': 'ricebowl', 'salad bowls': 'salad', 'salad bowl': 'salad', 'bowl salad': 'salad', 'skewers': 'skewer', 'skewer': 'skewer', 'chargrilled': 'chargrilled', 'snacks': 'snack', 'chips': 'snack', 'drinks': 'drink', 'drink': 'drink' };
     const isChipsItem = (name) => name?.toLowerCase().includes('chip');
-
     let updated = 0;
     for (const doc_ of snap.docs) {
       const data = doc_.data();
-      const cat = (data.category || data.categoryName || '').toLowerCase();
+      const cat  = (data.category || data.categoryName || '').toLowerCase();
       const name = (data.name || '').toLowerCase();
-      const itemType = categoryToItemType[cat] ?? 'wrap';
-      await upd(d(db, 'menuItems', doc_.id), {
-        itemType,
-        isChips: isChipsItem(name),
-      });
+      await upd(d(db, 'menuItems', doc_.id), { itemType: categoryToItemType[cat] ?? 'wrap', isChips: isChipsItem(name) });
       updated++;
     }
     alert(`Updated ${updated} items with itemType.`);
   };
 
-  const todaysOrders = orders.filter(o => {
-    if (!o.createdAt) return false;
-    const d = o.createdAt.toDate?.() || new Date(o.createdAt);
-    return d.toDateString() === new Date().toDateString();
-  });
+  // ── Computed ──────────────────────────────────────────────────────────────
+  const todaysOrders  = orders.filter(o => { if (!o.createdAt) return false; const d = o.createdAt.toDate?.() || new Date(o.createdAt); return d.toDateString() === new Date().toDateString(); });
   const todaysRevenue = todaysOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const pendingCount  = orders.filter(o => o.status === 'pending').length;
 
-  const card = (icon, label, value, color = 'var(--brand)') => (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px' }}>
-      <div style={{ fontSize: 28, marginBottom: 8 }}>{icon}</div>
-      <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontFamily: 'Playfair Display', fontSize: 28, fontWeight: 700, color }}>{value}</div>
+  // ── Shared field style ────────────────────────────────────────────────────
+  const inp = { width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5ead0', padding: '11px 14px', borderRadius: 2, fontSize: 13, outline: 'none', fontFamily: '"Courier New", monospace', boxSizing: 'border-box', letterSpacing: 0.5 };
+
+  // ── Section heading ───────────────────────────────────────────────────────
+  const SectionHead = ({ title, action }) => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 3, height: 18, background: 'linear-gradient(180deg, #fbbf24, #f59e0b)', borderRadius: 1, flexShrink: 0 }} />
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#f5ead0', margin: 0, fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>{title.toUpperCase()}</h2>
+        </div>
+        <div style={{ width: 40, height: 1, background: 'linear-gradient(90deg, #f59e0b, transparent)', marginTop: 7, marginLeft: 13 }} />
+      </div>
+      {action}
     </div>
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--warm-dark)' }}>
-      {/* Admin Navbar */}
-      <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: 'var(--brand)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 14 }}>TJ</div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Admin Panel</div>
-            <div style={{ fontSize: 10, color: 'var(--gold)', fontWeight: 600 }}>MANAGEMENT CONSOLE</div>
+    <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex' }}>
+
+      {/* Three.js lava scene */}
+      <LavaScene />
+
+      {/* Cursor-reactive spotlight */}
+      <CursorSpotlight />
+
+      {/* AI assistant — floating widget + one-time login greeting */}
+      <AdminAssistant
+        tab={tab}
+        todaysOrders={todaysOrders}
+        todaysRevenue={todaysRevenue}
+        pendingCount={pendingCount}
+      />
+
+      <Sidebar
+        tab={tab} setTab={setTab}
+        onSignOut={() => signOut(auth)}
+        menuItems={menuItems} seeding={seeding}
+        onSeed={seedDatabase} onClean={cleanDuplicates} onAssignTypes={assignItemTypes}
+      />
+
+      {/* Main content */}
+      <div style={{ marginLeft: 240, flex: 1, position: 'relative', zIndex: 1 }}>
+
+        {/* Sticky HUD header */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 100,
+          background: 'rgba(3,1,0,0.94)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(245,158,11,0.09)',
+          padding: '0 32px', height: 56,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          {/* Left: breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16 }}>{NAV_ITEMS[tab]?.icon}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#f5ead0', fontFamily: '"Courier New", monospace', letterSpacing: 2, textTransform: 'uppercase' }}>{NAV_ITEMS[tab]?.label}</span>
+            <span style={{ fontSize: 9, color: 'rgba(245,158,11,0.35)', fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>{'//'} TJ-KEBAB-CENTRE</span>
+          </div>
+          {/* Right: live status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
+            <span style={{ fontSize: 9, color: '#4ade80', fontWeight: 700, letterSpacing: 2, fontFamily: '"Courier New", monospace' }}>LIVE FEED</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {menuItems.length === 0 && (
-            <button onClick={seedDatabase} disabled={seeding} style={{ background: 'rgba(240,165,0,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-              {seeding ? '⏳ Seeding...' : '🌱 Seed Database'}
-            </button>
-          )}
-          <button onClick={cleanDuplicates} style={{ background: 'rgba(76,175,80,0.12)', border: '1px solid rgba(76,175,80,0.4)', color: 'var(--green)', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>🧹 Clean Duplicates</button>
-          <button onClick={assignItemTypes} style={{ background: '#F59E0B', color: '#111', padding: '7px 14px', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>🏷️ Set Item Types</button>
-          <button onClick={() => signOut(auth)} style={{ background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text2)', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>Sign Out</button>
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, padding: '16px 20px 0', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {TABS.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)} style={{ background: tab === i ? 'var(--brand)' : 'var(--card)', border: `1px solid ${tab === i ? 'var(--brand)' : 'var(--border)'}`, color: tab === i ? '#fff' : 'var(--text2)', padding: '9px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0, transition: 'all 0.2s' }}>{t}</button>
-        ))}
-      </div>
+        <div style={{ padding: '28px 32px' }}>
+          <AnimatePresence mode="wait">
 
-      <div style={{ padding: '20px' }}>
+            {/* ── OVERVIEW ── */}
+            {tab === 0 && (
+              <motion.div key="overview" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+                  {[
+                    { icon: '📦', label: "TODAY'S ORDERS",  value: todaysOrders.length, accent: '#f59e0b', sub: `${orders.length} total` },
+                    { icon: '💰', label: "TODAY'S REVENUE",  value: `$${todaysRevenue.toFixed(2)}`, accent: '#fbbf24', sub: 'incl. GST' },
+                    { icon: '🍽️', label: 'ACTIVE ITEMS',  value: menuItems.filter(m => m.available).length, accent: '#4ade80', sub: `of ${menuItems.length} total` },
+                    { icon: '⏳', label: 'PENDING',  value: pendingCount, accent: '#ff8c42', sub: 'awaiting action' },
+                  ].map(({ icon, label, value, accent, sub }) => (
+                    <HUDCard key={label} accent={accent} style={{ height: '100%' }}>
+                      <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${accent}1a 0%, transparent 70%)`, pointerEvents: 'none' }} />
+                      <div style={{ fontSize: 22, marginBottom: 10 }}>{icon}</div>
+                      <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: `${accent}aa`, marginBottom: 7, fontFamily: '"Courier New", monospace' }}>{label}</div>
+                      <div style={{ fontSize: 32, fontWeight: 800, color: accent, fontFamily: '"Courier New", monospace', lineHeight: 1, letterSpacing: -1 }}>{value}</div>
+                      {sub && <div style={{ fontSize: 11, color: 'rgba(156,138,114,0.7)', marginTop: 6, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}>{sub}</div>}
+                    </HUDCard>
+                  ))}
+                </div>
 
-        {/* DASHBOARD */}
-        {tab === 0 && (
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Today's Overview</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 28 }}>
-              {card('📦', "Today's Orders", todaysOrders.length)}
-              {card('💰', "Today's Revenue", `$${todaysRevenue.toFixed(2)}`, 'var(--gold)')}
-              {card('🍽️', 'Menu Items', menuItems.filter(m=>m.available).length, 'var(--green)')}
-              {card('⏳', 'Pending Orders', orders.filter(o=>o.status==='pending').length, '#FF6B40')}
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 14, color: 'var(--gold)' }}>Recent Orders</h3>
-            {orders.slice(0, 5).map(order => (
-              <OrderRow key={order.id} order={order} onStatusChange={updateOrderStatus} />
-            ))}
-            {orders.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No orders yet</p>}
-          </div>
-        )}
-
-        {/* MENU */}
-        {tab === 1 && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Menu Items ({menuItems.length})</h2>
-              <button onClick={() => setShowAddItem(true)} style={{ background: 'var(--brand)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>+ Add Item</button>
-            </div>
-            <p style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, letterSpacing: 0.5, marginBottom: 20, background: '#16a34a22', border: '1px solid #16a34a44', display: 'inline-block', padding: '3px 10px', borderRadius: 100 }}>
-              LIVE — price changes save automatically and reflect instantly in the customer menu
-            </p>
-
-            {/* Group items by category using live Firestore data */}
-            {Object.entries(
-              menuItems.reduce((acc, item) => {
-                const cat = item.category || 'Other';
-                if (!acc[cat]) acc[cat] = [];
-                acc[cat].push(item);
-                return acc;
-              }, {})
-            ).map(([cat, catItems]) => (
-              <div key={cat} style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                  {catItems[0]?.emoji ?? ''} {cat}
-                </h3>
+                <SectionHead title="Recent Orders" />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {catItems.map(item => (
-                    <div key={item.id} style={{ background: 'var(--card)', border: `1px solid ${item.available ? 'var(--border)' : 'rgba(226,75,74,0.3)'}`, borderRadius: 'var(--radius)', padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: item.available ? 'var(--text)' : 'var(--muted)', marginBottom: 2 }}>{item.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{item.description?.slice(0, 70)}</div>
-                        </div>
+                  <AnimatePresence initial={false}>
+                    {orders.slice(0, 8).map((order, i) => (
+                      <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ delay: i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                        <OrderRow order={order} onStatusChange={updateOrderStatus} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {orders.length === 0 && <EmptyState msg="NO ORDERS IN FEED" />}
+                </div>
+              </motion.div>
+            )}
 
-                        {/* Inline price input */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ color: '#9ca3af', fontSize: 12 }}>$</span>
-                          <input
-                            type="number" min="0" step="0.50"
-                            value={item.price ?? ''}
-                            onChange={e => handlePriceChange(item.id, e.target.value)}
-                            title="Edit price — saves automatically"
-                            style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '4px 6px', borderRadius: 6, fontSize: 14, fontWeight: 700, width: 68, textAlign: 'right', outline: 'none' }}
-                            onFocus={e => e.target.style.borderColor = '#f59e0b'}
-                            onBlur={e => e.target.style.borderColor = '#2a2a2a'}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                          <button onClick={() => toggleItem(item.id, item.available)} style={{ background: item.available ? 'rgba(76,175,80,0.15)' : 'rgba(226,75,74,0.15)', border: `1px solid ${item.available ? 'rgba(76,175,80,0.4)' : 'rgba(226,75,74,0.4)'}`, color: item.available ? 'var(--green)' : '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                            {item.available ? '✓ On' : '✗ Off'}
-                          </button>
-                          <button onClick={() => setEditItem(item)} style={{ background: 'rgba(240,165,0,0.1)', border: '1px solid rgba(240,165,0,0.3)', color: 'var(--gold)', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
-                          <button onClick={() => deleteItem(item.id)} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid rgba(226,75,74,0.3)', color: '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Del</button>
-                        </div>
-                      </div>
-
-                      {/* Bowl sub-prices */}
-                      {item.itemType === 'bowl' && (
-                        <div style={{ display: 'flex', gap: 12, marginTop: 8, paddingTop: 8, borderTop: '1px solid #222' }}>
-                          {[['saladPrice', 'Salad'], ['ricePrice', 'Rice']].map(([field, label]) => (
-                            <label key={field} style={{ color: '#9ca3af', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {label} $
-                              <input type="number" min="0" step="0.50" value={item[field] ?? item.price ?? ''}
-                                onChange={e => handleBowlPriceChange(item.id, field, e.target.value)}
-                                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '3px 5px', borderRadius: 5, fontSize: 12, width: 52, outline: 'none' }}
-                                onFocus={e => e.target.style.borderColor = '#f59e0b'}
-                                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+            {/* ── MENU ── */}
+            {tab === 1 && (
+              <motion.div key="menu" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <SectionHead
+                  title={`Menu Items (${menuItems.length})`}
+                  action={<button onClick={() => setShowAddItem(true)} style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '9px 20px', borderRadius: 2, fontWeight: 700, fontSize: 11, letterSpacing: 2, fontFamily: '"Courier New", monospace', boxShadow: '0 4px 16px rgba(245,158,11,0.25)' }}>+ ADD ITEM</button>}
+                />
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.16)', borderRadius: 2, padding: '4px 14px', marginBottom: 24, fontSize: 10, color: '#4ade80', fontWeight: 700, letterSpacing: 1.5, fontFamily: '"Courier New", monospace' }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+                  LIVE — PRICE CHANGES PUSH TO CUSTOMER MENU INSTANTLY
+                </div>
+                {Object.entries(
+                  menuItems.reduce((acc, item) => {
+                    const cat = item.category || 'Other';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(item);
+                    return acc;
+                  }, {})
+                ).map(([cat, catItems]) => (
+                  <div key={cat} style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 10, fontFamily: '"Courier New", monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{catItems[0]?.emoji ?? '◆'}</span><span>{cat}</span>
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {catItems.map(item => (
+                        <div key={item.id} style={{ background: 'rgba(2,6,18,0.78)', backdropFilter: 'blur(8px)', border: `1px solid ${item.available ? 'rgba(245,158,11,0.1)' : 'rgba(255,107,107,0.18)'}`, borderLeft: `2px solid ${item.available ? 'rgba(245,158,11,0.35)' : 'rgba(255,107,107,0.4)'}`, borderRadius: 2, padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: item.available ? '#f5ead0' : '#9c8a72', marginBottom: 2, fontFamily: 'Inter, sans-serif' }}>{item.name}</div>
+                              <div style={{ fontSize: 11, color: '#9c8a72', fontFamily: 'Inter, sans-serif' }}>{item.description?.slice(0, 72)}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ color: '#9c8a72', fontSize: 11, fontFamily: '"Courier New", monospace' }}>$</span>
+                              <input type="number" min="0" step="0.50" value={item.price ?? ''} onChange={e => handlePriceChange(item.id, e.target.value)} title="Edit price"
+                                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b', padding: '5px 7px', borderRadius: 2, fontSize: 13, fontWeight: 700, width: 68, textAlign: 'right', outline: 'none', fontFamily: '"Courier New", monospace' }}
+                                onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.7)'} onBlur={e => e.target.style.borderColor = 'rgba(245,158,11,0.2)'}
                               />
-                            </label>
-                          ))}
+                            </div>
+                            <div style={{ display: 'flex', gap: 5 }}>
+                              <button onClick={() => toggleItem(item.id, item.available)} style={{ background: item.available ? 'rgba(74,222,128,0.07)' : 'rgba(255,107,107,0.07)', border: `1px solid ${item.available ? 'rgba(74,222,128,0.25)' : 'rgba(255,107,107,0.25)'}`, color: item.available ? '#4ade80' : '#ff8888', padding: '4px 11px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>{item.available ? 'ON' : 'OFF'}</button>
+                              <button onClick={() => setEditItem(item)} style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.16)', color: '#f59e0b', padding: '4px 11px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>EDIT</button>
+                              <button onClick={() => deleteItem(item.id)} style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.16)', color: '#ff8888', padding: '4px 11px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>DEL</button>
+                            </div>
+                          </div>
+                          {item.itemType === 'bowl' && (
+                            <div style={{ display: 'flex', gap: 14, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                              {[['saladPrice', 'Salad'], ['ricePrice', 'Rice']].map(([field, label]) => (
+                                <label key={field} style={{ color: '#9c8a72', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"Courier New", monospace' }}>{label} $
+                                  <input type="number" min="0" step="0.50" value={item[field] ?? item.price ?? ''} onChange={e => handleBowlPriceChange(item.id, field, e.target.value)}
+                                    style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b', padding: '3px 6px', borderRadius: 2, fontSize: 11, width: 52, outline: 'none', fontFamily: '"Courier New", monospace' }}
+                                    onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.6)'} onBlur={e => e.target.style.borderColor = 'rgba(245,158,11,0.2)'}
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                          {item.sizePrices && (
+                            <div style={{ display: 'flex', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)', flexWrap: 'wrap' }}>
+                              {Object.entries(item.sizePrices).map(([size, price]) => (
+                                <label key={size} style={{ color: '#9c8a72', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"Courier New", monospace' }}>{size} $
+                                  <input type="number" min="0" step="1" value={price ?? ''} onChange={e => handleSizePriceChange(item.id, size, e.target.value)}
+                                    style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b', padding: '3px 5px', borderRadius: 2, fontSize: 11, width: 48, outline: 'none', fontFamily: '"Courier New", monospace' }}
+                                    onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.6)'} onBlur={e => e.target.style.borderColor = 'rgba(245,158,11,0.2)'}
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
 
-                      {/* HSP / Chips size prices */}
-                      {item.sizePrices && (
-                        <div style={{ display: 'flex', gap: 10, marginTop: 8, paddingTop: 8, borderTop: '1px solid #222', flexWrap: 'wrap' }}>
-                          {Object.entries(item.sizePrices).map(([size, price]) => (
-                            <label key={size} style={{ color: '#9ca3af', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {size} $
-                              <input type="number" min="0" step="1" value={price ?? ''}
-                                onChange={e => handleSizePriceChange(item.id, size, e.target.value)}
-                                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f59e0b', padding: '3px 5px', borderRadius: 5, fontSize: 12, width: 50, outline: 'none' }}
-                                onFocus={e => e.target.style.borderColor = '#f59e0b'}
-                                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
-                              />
-                            </label>
-                          ))}
-                        </div>
-                      )}
+            {/* ── ORDERS ── */}
+            {tab === 2 && (
+              <motion.div key="orders" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <SectionHead title={`All Orders (${orders.length})`} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <AnimatePresence initial={false}>
+                    {orders.map((order, i) => (
+                      <motion.div key={order.id} initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }} transition={{ delay: Math.min(i, 8) * 0.035, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                        <OrderRow order={order} onStatusChange={updateOrderStatus} full />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {orders.length === 0 && <EmptyState msg="NO ORDERS IN FEED" />}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── PROMOTIONS ── */}
+            {tab === 3 && (
+              <motion.div key="promotions" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <SectionHead
+                  title="Promotions"
+                  action={<button onClick={() => setShowAddPromo(true)} style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '9px 20px', borderRadius: 2, fontWeight: 700, fontSize: 11, letterSpacing: 2, fontFamily: '"Courier New", monospace' }}>+ ADD PROMO</button>}
+                />
+                {promotions.map(p => (
+                  <div key={p.id} style={{ background: 'rgba(2,6,18,0.78)', backdropFilter: 'blur(8px)', border: `1px solid ${p.active ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'}`, borderLeft: `2px solid ${p.active ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`, borderRadius: 2, padding: '14px 18px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <span style={{ fontSize: 28 }}>{p.emoji || '🎉'}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#f5ead0', marginBottom: 3, fontFamily: 'Inter, sans-serif' }}>{p.title}</div>
+                      <div style={{ fontSize: 12, color: '#9c8a72', fontFamily: 'Inter, sans-serif' }}>{p.description}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => togglePromo(p.id, p.active)} style={{ background: p.active ? 'rgba(74,222,128,0.07)' : 'rgba(255,107,107,0.07)', border: `1px solid ${p.active ? 'rgba(74,222,128,0.25)' : 'rgba(255,107,107,0.25)'}`, color: p.active ? '#4ade80' : '#ff8888', padding: '6px 14px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>{p.active ? 'ACTIVE' : 'OFFLINE'}</button>
+                      <button onClick={() => deleteDoc(doc(db, 'promotions', p.id))} style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.16)', color: '#ff8888', padding: '6px 12px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>DEL</button>
+                    </div>
+                  </div>
+                ))}
+                {promotions.length === 0 && <EmptyState msg="NO PROMOTIONS ACTIVE" />}
+              </motion.div>
+            )}
+
+            {/* ── DRINKS ── */}
+            {tab === 4 && (
+              <motion.div key="drinks" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <SectionHead title={`Drinks (${drinks.length})`} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {drinks.map(drink => (
+                    <div key={drink.id} style={{ background: 'rgba(2,6,18,0.78)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,158,11,0.09)', borderLeft: '2px solid rgba(245,158,11,0.25)', borderRadius: 2, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <span style={{ fontSize: 20 }}>🥤</span>
+                      <div style={{ flex: 1, fontWeight: 600, fontSize: 13, color: '#f5ead0', fontFamily: 'Inter, sans-serif' }}>{drink.name}</div>
+                      <div style={{ fontWeight: 700, color: '#f59e0b', fontFamily: '"Courier New", monospace', fontSize: 14 }}>${drink.price?.toFixed(2)}</div>
+                      <button onClick={() => updateDoc(doc(db, 'drinks', drink.id), { available: !drink.available })} style={{ background: drink.available ? 'rgba(74,222,128,0.07)' : 'rgba(255,107,107,0.07)', border: `1px solid ${drink.available ? 'rgba(74,222,128,0.25)' : 'rgba(255,107,107,0.25)'}`, color: drink.available ? '#4ade80' : '#ff8888', padding: '4px 12px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace' }}>
+                        {drink.available ? 'ON' : 'OFF'}
+                      </button>
                     </div>
                   ))}
+                  {drinks.length === 0 && <EmptyState msg="NO DRINKS IN DATABASE" />}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </motion.div>
+            )}
 
-        {/* ORDERS */}
-        {tab === 2 && (
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>All Orders ({orders.length})</h2>
-            {orders.map(order => <OrderRow key={order.id} order={order} onStatusChange={updateOrderStatus} full />)}
-            {orders.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '60px 0' }}>No orders yet</p>}
-          </div>
-        )}
+            {/* ── STAFF ── */}
+            {tab === 5 && (
+              <motion.div key="staff" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <StaffManagement />
+              </motion.div>
+            )}
 
-        {/* PROMOTIONS */}
-        {tab === 3 && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 700 }}>Promotions</h2>
-              <button onClick={() => setShowAddPromo(true)} style={{ background: 'var(--brand)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>+ Add Promo</button>
-            </div>
-            {promotions.map(p => (
-              <div key={p.id} style={{ background: 'var(--card)', border: `1px solid ${p.active ? 'rgba(240,165,0,0.3)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{ fontSize: 32 }}>{p.emoji || '🎉'}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{p.title}</div>
-                  <div style={{ fontSize: 13, color: 'var(--muted)' }}>{p.description}</div>
+            {/* ── QR CODE ── */}
+            {tab === 6 && (
+              <motion.div key="qr" variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ maxWidth: 500 }}>
+                <SectionHead title="QR Code" />
+                <p style={{ fontSize: 13, color: '#9c8a72', marginBottom: 18, fontFamily: 'Inter, sans-serif' }}>Display at the counter — customers scan to order online.</p>
+                <div style={{ background: 'rgba(2,6,18,0.78)', border: '1px solid rgba(245,158,11,0.11)', borderRadius: 2, padding: '14px 18px', marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontSize: 9, color: '#9c8a72', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 8, fontFamily: '"Courier New", monospace' }}>ORDER URL</label>
+                  <input value={qrUrl} onChange={e => setQrUrl(e.target.value)} style={inp} />
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => togglePromo(p.id, p.active)} style={{ background: p.active ? 'rgba(76,175,80,0.15)' : 'rgba(226,75,74,0.15)', border: `1px solid ${p.active ? 'rgba(76,175,80,0.4)' : 'rgba(226,75,74,0.4)'}`, color: p.active ? 'var(--green)' : '#FF6B6B', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
-                    {p.active ? '✓ Active' : '✗ Off'}
-                  </button>
-                  <button onClick={() => deleteDoc(doc(db, 'promotions', p.id))} style={{ background: 'rgba(226,75,74,0.1)', border: '1px solid rgba(226,75,74,0.3)', color: '#FF6B6B', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>Del</button>
+                <div id="qr-print-area" style={{ background: '#fff', borderRadius: 4, padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+                  <QRCode value={qrUrl} size={220} />
+                  <div style={{ fontFamily: 'Arial', fontWeight: 900, fontSize: 18, color: '#111', letterSpacing: 2 }}>TJ'S KEBAB CENTRE</div>
+                  <div style={{ fontFamily: 'Arial', fontSize: 12, color: '#555' }}>Scan to view menu &amp; order online</div>
                 </div>
-              </div>
-            ))}
-            {promotions.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No promotions yet — add one above!</p>}
-          </div>
-        )}
-
-        {/* STAFF */}
-        {tab === 5 && <StaffManagement />}
-
-        {/* QR CODE */}
-        {tab === 6 && (
-          <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>📱 QR Code</h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16 }}>Display at the counter — customers scan to order online.</p>
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Order URL</label>
-              <input value={qrUrl} onChange={e => setQrUrl(e.target.value)} style={{ width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-            <div id="qr-print-area" style={{ background: '#fff', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <QRCode value={qrUrl} size={220} />
-              <div style={{ fontFamily: 'Arial', fontWeight: 900, fontSize: 18, color: '#111', letterSpacing: 2 }}>TJ'S KEBAB CENTRE</div>
-              <div style={{ fontFamily: 'Arial', fontSize: 12, color: '#555' }}>Scan to view menu &amp; order online</div>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => {
-                  const el = document.getElementById('qr-print-area');
-                  const w = window.open('', '_blank', 'width=420,height=480');
-                  w.document.write(`<html><body style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh">${el.outerHTML}</body></html>`);
-                  w.document.close(); w.print();
-                }}
-                style={{ flex: 1, background: 'var(--brand)', color: '#000', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-              >🖨️ Print QR</button>
-              <a href="/menu-card" target="_blank" rel="noopener noreferrer"
-                style={{ flex: 1, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 14, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >📄 Print Menu Card</a>
-            </div>
-          </div>
-        )}
-
-        {/* BLAST */}
-        {tab === 7 && (
-          <div style={{ maxWidth: 560, margin: '0 auto' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>📢 Send Promo Blast</h2>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
-              Send a promotional message to all subscribers via email, SMS, or push. Requires the backend server running at <code>{API_URL}</code>.
-            </p>
-
-            {/* Channel selector */}
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Channels</label>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {[['email', '📧 Email'], ['sms', '💬 SMS'], ['push', '🔔 Push']].map(([ch, label]) => (
+                <div style={{ display: 'flex', gap: 10 }}>
                   <button
-                    key={ch}
-                    type="button"
-                    onClick={() => setBlastChannels(prev =>
-                      prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]
-                    )}
-                    style={{
-                      padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                      border: `1px solid ${blastChannels.includes(ch) ? 'var(--brand)' : 'var(--border)'}`,
-                      background: blastChannels.includes(ch) ? 'rgba(245,158,11,0.12)' : 'var(--card)',
-                      color: blastChannels.includes(ch) ? 'var(--brand)' : 'var(--muted)',
-                    }}
-                  >{label}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Subject (email only) */}
-            {blastChannels.includes('email') && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Email Subject</label>
-                <input
-                  value={blastSubject}
-                  onChange={e => setBlastSubject(e.target.value)}
-                  placeholder="e.g. 20% off this weekend only 🥙"
-                  style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-            )}
-
-            {/* Message */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Message</label>
-              <textarea
-                value={blastMsg}
-                onChange={e => setBlastMsg(e.target.value)}
-                placeholder="This weekend only — get 20% off all kebab wraps! Use code KEBAB20 at checkout."
-                rows={4}
-                style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            {/* Send button */}
-            <button
-              onClick={async () => {
-                if (!blastMsg.trim()) { alert('Message is required'); return; }
-                if (!blastChannels.length) { alert('Select at least one channel'); return; }
-                if (!window.confirm(`Send blast to all subscribers via: ${blastChannels.join(', ')}?`)) return;
-
-                setBlasting(true);
-                setBlastResult(null);
-                try {
-                  const { auth: firebaseAuth } = await import('../firebase');
-                  const token = await firebaseAuth.currentUser?.getIdToken();
-                  const res = await fetch(`${API_URL}/api/notify/blast`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ subject: blastSubject || undefined, message: blastMsg, channels: blastChannels }),
-                  });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data.error ?? 'Blast failed');
-                  setBlastResult({ ok: true, data });
-                  setBlastMsg('');
-                  setBlastSubject('');
-                } catch (err) {
-                  setBlastResult({ ok: false, error: err.message });
-                } finally {
-                  setBlasting(false);
-                }
-              }}
-              disabled={blasting}
-              style={{ width: '100%', background: 'var(--brand)', color: '#000', border: 'none', padding: '14px', borderRadius: 10, fontWeight: 900, fontSize: 15, cursor: blasting ? 'not-allowed' : 'pointer', opacity: blasting ? 0.6 : 1 }}
-            >
-              {blasting ? '⏳ Sending...' : '🚀 Send Blast'}
-            </button>
-
-            {/* Result */}
-            {blastResult && (
-              <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${blastResult.ok ? 'rgba(74,222,128,0.3)' : 'rgba(255,107,107,0.3)'}`, background: blastResult.ok ? 'rgba(74,222,128,0.08)' : 'rgba(255,107,107,0.08)' }}>
-                {blastResult.ok ? (
-                  <>
-                    <p style={{ color: '#4ade80', fontWeight: 700, margin: '0 0 6px' }}>✓ Blast sent!</p>
-                    {Object.entries(blastResult.data.results ?? {}).map(([ch, r]) => (
-                      <p key={ch} style={{ color: 'var(--muted)', fontSize: 13, margin: '2px 0' }}>
-                        {ch}: {r?.sent ?? 0} sent, {r?.failed ?? 0} failed
-                      </p>
-                    ))}
-                  </>
-                ) : (
-                  <p style={{ color: '#FF6B6B', fontWeight: 700, margin: 0 }}>✗ {blastResult.error}</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* DRINKS */}
-        {tab === 4 && (
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Drinks ({drinks.length})</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {drinks.map(drink => (
-                <div key={drink.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 20 }}>🥤</span>
-                  <div style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{drink.name}</div>
-                  <div style={{ fontFamily: 'Playfair Display', fontWeight: 700, color: 'var(--brand)' }}>${drink.price?.toFixed(2)}</div>
-                  <button onClick={() => updateDoc(doc(db, 'drinks', drink.id), { available: !drink.available })} style={{ background: drink.available ? 'rgba(76,175,80,0.15)' : 'rgba(226,75,74,0.15)', border: `1px solid ${drink.available ? 'rgba(76,175,80,0.4)' : 'rgba(226,75,74,0.4)'}`, color: drink.available ? 'var(--green)' : '#FF6B6B', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                    {drink.available ? '✓ On' : '✗ Off'}
-                  </button>
+                    onClick={() => { const el = document.getElementById('qr-print-area'); const w = window.open('', '_blank', 'width=420,height=480'); w.document.write(`<html><body style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh">${el.outerHTML}</body></html>`); w.document.close(); w.print(); }}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '12px', borderRadius: 2, fontWeight: 700, fontSize: 13, fontFamily: '"Courier New", monospace', letterSpacing: 1 }}
+                  >▸ PRINT QR</button>
+                  <a href="/menu-card" target="_blank" rel="noopener noreferrer"
+                    style={{ flex: 1, background: 'rgba(2,6,18,0.78)', border: '1px solid rgba(245,158,11,0.14)', color: '#f5ead0', padding: '12px', borderRadius: 2, fontWeight: 700, fontSize: 13, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Courier New", monospace', letterSpacing: 1 }}
+                  >▸ PRINT MENU</a>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-        {/* SUBSCRIBERS */}
-        {tab === 8 && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ color: 'var(--brand)', margin: 0, fontSize: 20, fontWeight: 700 }}>📬 Promo Subscribers ({subscribers.length})</h3>
-              <button
-                onClick={() => {
-                  const csv = ['Email,Phone,Channels,Date', ...subscribers.map(s =>
-                    `"${s.email ?? ''}","${s.phone ?? ''}","${(s.channels ?? []).join('+')}","${s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? ''}"`
-                  )].join('\n');
-                  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'subscribers.csv' });
-                  a.click();
-                }}
-                style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--muted)', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-              >Export CSV</button>
-            </div>
-
-            {subscribers.length === 0 ? (
-              <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px 0' }}>No subscribers yet — the promo banner on the menu page drives sign-ups.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    {['Email', 'Phone', 'Channels', 'Signed Up'].map(h => (
-                      <th key={h} style={{ color: 'var(--muted)', textAlign: 'left', padding: '8px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {subscribers.map(s => (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
-                      <td style={{ padding: '9px 12px', color: 'var(--text)' }}>{s.email ?? '—'}</td>
-                      <td style={{ padding: '9px 12px', color: 'var(--text)' }}>{s.phone ?? '—'}</td>
-                      <td style={{ padding: '9px 12px' }}>
-                        {(s.channels ?? []).map(ch => (
-                          <span key={ch} style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--brand)', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, marginRight: 4 }}>{ch.toUpperCase()}</span>
-                        ))}
-                      </td>
-                      <td style={{ padding: '9px 12px', color: 'var(--muted)', fontSize: 12 }}>
-                        {s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              </motion.div>
             )}
-          </div>
-        )}
+
+            {/* ── BLAST ── */}
+            {tab === 7 && (
+              <motion.div key="blast" variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ maxWidth: 580 }}>
+                <SectionHead title="Promo Blast" />
+                <p style={{ fontSize: 12, color: '#9c8a72', marginBottom: 22, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}>
+                  Transmit promotional message to all subscribers. Backend endpoint: <code style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.08)', padding: '1px 6px', borderRadius: 2 }}>{API_URL}</code>.
+                </p>
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontSize: 9, color: '#9c8a72', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 10, fontFamily: '"Courier New", monospace' }}>CHANNELS</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[['email', '📧 EMAIL'], ['sms', '💬 SMS'], ['push', '🔔 PUSH']].map(([ch, label]) => (
+                      <button key={ch} onClick={() => setBlastChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch])}
+                        style={{ padding: '8px 16px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace', letterSpacing: 1.5, border: `1px solid ${blastChannels.includes(ch) ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.08)'}`, background: blastChannels.includes(ch) ? 'rgba(245,158,11,0.08)' : 'rgba(2,6,18,0.78)', color: blastChannels.includes(ch) ? '#f59e0b' : '#9c8a72' }}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </div>
+                {blastChannels.includes('email') && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontSize: 9, color: '#9c8a72', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 8, fontFamily: '"Courier New", monospace' }}>EMAIL SUBJECT</label>
+                    <input value={blastSubject} onChange={e => setBlastSubject(e.target.value)} placeholder="e.g. 20% off this weekend only 🥙" style={inp} />
+                  </div>
+                )}
+                <div style={{ marginBottom: 22 }}>
+                  <label style={{ display: 'block', fontSize: 9, color: '#9c8a72', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 8, fontFamily: '"Courier New", monospace' }}>MESSAGE</label>
+                  <textarea value={blastMsg} onChange={e => setBlastMsg(e.target.value)} placeholder="This weekend only — get 20% off all kebab wraps! Use code KEBAB20 at checkout." rows={4} style={{ ...inp, minHeight: 100, resize: 'vertical' }} />
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!blastMsg.trim()) { alert('Message is required'); return; }
+                    if (!blastChannels.length) { alert('Select at least one channel'); return; }
+                    if (!window.confirm(`Send blast to all subscribers via: ${blastChannels.join(', ')}?`)) return;
+                    setBlasting(true); setBlastResult(null);
+                    try {
+                      const { auth: firebaseAuth } = await import('../firebase');
+                      const token = await firebaseAuth.currentUser?.getIdToken();
+                      const res  = await fetch(`${API_URL}/api/notify/blast`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ subject: blastSubject || undefined, message: blastMsg, channels: blastChannels }) });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error ?? 'Blast failed');
+                      setBlastResult({ ok: true, data }); setBlastMsg(''); setBlastSubject('');
+                    } catch (err) { setBlastResult({ ok: false, error: err.message }); }
+                    finally { setBlasting(false); }
+                  }}
+                  disabled={blasting}
+                  style={{ width: '100%', background: blasting ? 'rgba(245,158,11,0.25)' : 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '13px', borderRadius: 2, fontWeight: 900, fontSize: 12, fontFamily: '"Courier New", monospace', letterSpacing: 3 }}
+                >{blasting ? '⏳ TRANSMITTING...' : '▶▶ SEND BLAST'}</button>
+                {blastResult && (
+                  <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 2, border: `1px solid ${blastResult.ok ? 'rgba(74,222,128,0.2)' : 'rgba(255,107,107,0.2)'}`, background: blastResult.ok ? 'rgba(74,222,128,0.04)' : 'rgba(255,107,107,0.04)', borderLeft: `3px solid ${blastResult.ok ? '#4ade80' : '#ff6b6b'}` }}>
+                    {blastResult.ok
+                      ? Object.entries(blastResult.data.results ?? {}).map(([ch, r]) => <p key={ch} style={{ color: '#9c8a72', fontSize: 12, margin: '2px 0', fontFamily: '"Courier New", monospace' }}>{ch.toUpperCase()}: {r?.sent ?? 0} SENT // {r?.failed ?? 0} FAILED</p>)
+                      : <p style={{ color: '#ff8888', fontWeight: 700, margin: 0, fontFamily: '"Courier New", monospace', fontSize: 12, letterSpacing: 1 }}>■ ERR // {blastResult.error}</p>
+                    }
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── SUBSCRIBERS ── */}
+            {tab === 8 && (
+              <motion.div key="subscribers" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <SectionHead
+                  title={`Subscribers (${subscribers.length})`}
+                  action={
+                    <button
+                      onClick={() => {
+                        const csv = ['Email,Phone,Channels,Date', ...subscribers.map(s => `"${s.email ?? ''}","${s.phone ?? ''}","${(s.channels ?? []).join('+')}","${s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? ''}"`)].join('\n');
+                        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'subscribers.csv' });
+                        a.click();
+                      }}
+                      style={{ background: 'rgba(2,6,18,0.78)', border: '1px solid rgba(245,158,11,0.16)', color: '#9c8a72', padding: '7px 16px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace', letterSpacing: 1.5 }}
+                    >EXPORT CSV</button>
+                  }
+                />
+                {subscribers.length === 0 ? (
+                  <EmptyState msg="NO SUBSCRIBERS — PROMO BANNER DRIVES SIGN-UPS" />
+                ) : (
+                  <div style={{ background: 'rgba(2,6,18,0.78)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,158,11,0.09)', borderRadius: 2, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: '"Courier New", monospace' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(245,158,11,0.09)', background: 'rgba(245,158,11,0.03)' }}>
+                          {['EMAIL', 'PHONE', 'CHANNELS', 'SIGNED UP'].map(h => (
+                            <th key={h} style={{ color: 'rgba(245,158,11,0.55)', textAlign: 'left', padding: '10px 14px', fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: 2 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {subscribers.map(s => (
+                          <tr key={s.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <td style={{ padding: '10px 14px', color: '#f5ead0', letterSpacing: 0.5 }}>{s.email ?? '—'}</td>
+                            <td style={{ padding: '10px 14px', color: '#f5ead0' }}>{s.phone ?? '—'}</td>
+                            <td style={{ padding: '10px 14px' }}>
+                              {(s.channels ?? []).map(ch => <span key={ch} style={{ background: 'rgba(245,158,11,0.08)', color: '#f59e0b', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 2, marginRight: 4, letterSpacing: 1 }}>{ch.toUpperCase()}</span>)}
+                            </td>
+                            <td style={{ padding: '10px 14px', color: '#9c8a72', fontSize: 11 }}>{s.createdAt?.toDate?.()?.toLocaleDateString?.('en-AU') ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+      </div>
 
       {/* Modals */}
       {(showAddItem || editItem) && <ItemModal item={editItem} onClose={() => { setShowAddItem(false); setEditItem(null); }} />}
@@ -616,50 +751,71 @@ export default function AdminDashboard() {
   );
 }
 
-function OrderRow({ order, onStatusChange, full }) {
-  const statusColors = { pending: '#FF6B40', confirmed: 'var(--gold)', preparing: '#4A9EFF', ready: 'var(--green)', delivered: 'var(--green)', cancelled: '#FF6B6B' };
-  const time = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString('en-AU') : 'Unknown time';
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ msg }) {
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <div>
-          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginRight: 10 }}>#{order.orderRef}</span>
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>{time}</span>
+    <div style={{ textAlign: 'center', padding: '56px 20px', color: '#9c8a72', fontFamily: '"Courier New", monospace', letterSpacing: 2, fontSize: 11, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 24, marginBottom: 12, opacity: 0.25, color: '#f59e0b' }}>◆</div>
+      {msg}
+    </div>
+  );
+}
+
+// ── Order row — HUD terminal style ────────────────────────────────────────────
+function OrderRow({ order, onStatusChange, full }) {
+  const statusColor = STATUS_COLORS[order.status] || '#9c8a72';
+  const time = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString('en-AU') : 'Unknown';
+  return (
+    <div style={{
+      background: 'rgba(2,6,18,0.78)', backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+      border: '1px solid rgba(245,158,11,0.10)',
+      borderLeft: `3px solid ${statusColor}`,
+      borderRadius: 2, padding: '13px 16px',
+      boxShadow: `inset 2px 0 16px ${statusColor}08`,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontWeight: 800, fontSize: 12, color: '#fbbf24', fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>#{order.orderRef}</span>
+          <span style={{ fontSize: 10, color: 'rgba(156,138,114,0.6)', fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}>{time}</span>
         </div>
-        <span style={{ fontFamily: 'Playfair Display', fontWeight: 700, fontSize: 16, color: 'var(--gold)' }}>${order.total?.toFixed(2)}</span>
+        <span style={{ fontWeight: 800, fontSize: 14, color: '#f59e0b', fontFamily: '"Courier New", monospace' }}>${order.total?.toFixed(2)}</span>
       </div>
-      <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 8 }}>
-        <strong>{order.name}</strong> · {order.phone} · {order.orderMode === 'delivery' ? `🛵 ${order.address}` : order.orderMode === 'dinein' ? '🍽️ Dine In' : '🏪 Pickup'}
+      <div style={{ fontSize: 12, color: '#b89c7a', marginBottom: 9, fontFamily: 'Inter, sans-serif' }}>
+        <strong style={{ color: '#f5ead0' }}>{order.name}</strong>
+        {' · '}{order.phone}
+        {' · '}{order.orderMode === 'delivery' ? `🛵 ${order.address}` : order.orderMode === 'dinein' ? '🍽️ Dine In' : '🏪 Pickup'}
       </div>
       {full && order.items && (
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
-          {order.items.map((item, i) => <span key={i}>{item.displayName || item.name} x{item.qty}{i < order.items.length - 1 ? ', ' : ''}</span>)}
+        <div style={{ fontSize: 11, color: '#9c8a72', marginBottom: 9, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}>
+          {order.items.map((item, i) => <span key={i}>{item.displayName || item.name} ×{item.qty}{i < order.items.length - 1 ? '  //  ' : ''}</span>)}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ background: `${statusColors[order.status] || 'var(--muted)'}22`, border: `1px solid ${statusColors[order.status] || 'var(--muted)'}44`, color: statusColors[order.status] || 'var(--muted)', padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{order.status || 'pending'}</span>
-        {['pending','confirmed','preparing','ready','delivered'].map(s => s !== order.status && (
-          <button key={s} onClick={() => onStatusChange(order.id, s)} style={{ background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>→ {s}</button>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ background: `${statusColor}14`, border: `1px solid ${statusColor}44`, color: statusColor, padding: '3px 10px', borderRadius: 2, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', fontFamily: '"Courier New", monospace', letterSpacing: 1.5 }}>{order.status || 'pending'}</span>
+        {['pending', 'confirmed', 'preparing', 'ready', 'delivered'].filter(s => s !== order.status).map(s => (
+          <button key={s} onClick={() => onStatusChange(order.id, s)} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#9c8a72', padding: '3px 9px', borderRadius: 2, fontSize: 10, fontWeight: 600, fontFamily: '"Courier New", monospace', letterSpacing: 0.8 }}>→ {s}</button>
         ))}
       </div>
     </div>
   );
 }
 
+// ── Item modal ────────────────────────────────────────────────────────────────
 function ItemModal({ item, onClose }) {
   const cats = [
     { id: 'signature-bowls', name: 'Signature Bowls', emoji: '🥣', order: 1 },
-    { id: 'kebab-wraps', name: 'Kebab Wraps', emoji: '🌯', order: 2 },
-    { id: 'hsp', name: 'HSP', emoji: '🍟', order: 3 },
-    { id: 'skewers-burgers', name: 'Skewers & Burgers', emoji: '🍢', order: 4 },
-    { id: 'falafel', name: 'Falafel', emoji: '🧆', order: 5 },
+    { id: 'kebab-wraps',     name: 'Kebab Wraps',     emoji: '🌯', order: 2 },
+    { id: 'hsp',             name: 'HSP',              emoji: '🍟', order: 3 },
+    { id: 'skewers-burgers', name: 'Skewers & Burgers',emoji: '🍢', order: 4 },
+    { id: 'falafel',         name: 'Falafel',          emoji: '🧆', order: 5 },
   ];
   const [form, setForm] = useState(item || { name: '', description: '', price: '', category: 'signature-bowls', popular: false, available: true, order: 99, hasSalad: true, hasSauce: true, hasExtras: true });
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
-    const cat = cats.find(c => c.id === form.category);
+    const cat  = cats.find(c => c.id === form.category);
     const data = { ...form, price: parseFloat(form.price), categoryName: cat.name, categoryEmoji: cat.emoji, categoryOrder: cat.order };
     if (item?.id) await updateDoc(doc(db, 'menuItems', item.id), data);
     else await addDoc(collection(db, 'menuItems'), data);
@@ -667,55 +823,79 @@ function ItemModal({ item, onClose }) {
     onClose();
   };
 
-  const inp = { width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none' };
-  const F = ({ label, children }) => <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{label}</label>{children}</div>;
+  const fi = { width: '100%', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5ead0', padding: '11px 14px', borderRadius: 2, fontSize: 13, outline: 'none', fontFamily: '"Courier New", monospace', boxSizing: 'border-box', letterSpacing: 0.5 };
+  const F = ({ label, children }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 9, color: 'rgba(245,158,11,0.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 7, fontFamily: '"Courier New", monospace' }}>{label}</label>
+      {children}
+    </div>
+  );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', padding: '24px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700 }}>{item ? 'Edit Item' : 'Add New Item'}</h2>
-          <button onClick={onClose} style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text2)', width: 32, height: 32, borderRadius: '50%', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        style={{ background: 'rgba(4,2,0,0.98)', backdropFilter: 'blur(28px)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 3, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', padding: '26px 24px', position: 'relative' }}
+      >
+        {/* Corner brackets on modal */}
+        {[['top','left'],['top','right'],['bottom','left'],['bottom','right']].map(([v,h],i) => (
+          <div key={i} style={{ position: 'absolute', [v]: -1, [h]: -1, width: 14, height: 14, zIndex: 5, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 10, height: 1.5, background: '#f59e0b' }} />
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 1.5, height: 10, background: '#f59e0b' }} />
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 800, color: '#f5ead0', margin: 0, fontFamily: '"Courier New", monospace', letterSpacing: 2, textTransform: 'uppercase' }}>{item ? '▸ EDIT ITEM' : '▸ ADD NEW ITEM'}</h2>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9c8a72', width: 32, height: 32, borderRadius: 2, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Courier New", monospace' }}>✕</button>
         </div>
-        <F label="Item Name"><input style={inp} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chicken Rice Bowl" /></F>
-        <F label="Description"><textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the item..." /></F>
-        <F label="Price ($)"><input style={inp} type="number" step="0.50" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="0.00" /></F>
+        <F label="Item Name"><input style={fi} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chicken Rice Bowl" /></F>
+        <F label="Description"><textarea style={{ ...fi, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the item..." /></F>
+        <F label="Price ($)"><input style={fi} type="number" step="0.50" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="0.00" /></F>
         <F label="Category">
-          <select style={inp} value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
-            {cats.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+          <select style={{ ...fi, appearance: 'none' }} value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
+            {cats.map(c => <option key={c.id} value={c.id} style={{ background: '#0d0600' }}>{c.emoji} {c.name}</option>)}
           </select>
         </F>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          {[['popular', '⭐ Popular'], ['available', '✓ Available'], ['hasSalad', '🥗 Has Salad'], ['hasSauce', '🫙 Has Sauce'], ['hasExtras', '➕ Has Extras']].map(([key, label]) => (
-            <button key={key} onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))} style={{ background: form[key] ? 'rgba(232,65,10,0.15)' : 'var(--card2)', border: `1px solid ${form[key] ? 'var(--brand)' : 'var(--border)'}`, color: form[key] ? 'var(--brand)' : 'var(--text2)', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{label}</button>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+          {[['popular', '⭐ Popular'], ['available', '✓ Available'], ['hasSalad', '🥗 Salad'], ['hasSauce', '🫙 Sauce'], ['hasExtras', '➕ Extras']].map(([key, label]) => (
+            <button key={key} onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))} style={{ background: form[key] ? 'rgba(245,158,11,0.09)' : 'rgba(255,255,255,0.03)', border: `1px solid ${form[key] ? 'rgba(245,158,11,0.35)' : 'rgba(255,255,255,0.07)'}`, color: form[key] ? '#f59e0b' : '#9c8a72', padding: '6px 12px', borderRadius: 2, fontSize: 11, fontWeight: 700, fontFamily: '"Courier New", monospace', letterSpacing: 0.5 }}>{label}</button>
           ))}
         </div>
-        <button onClick={save} disabled={saving || !form.name || !form.price} style={{ width: '100%', background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 16, opacity: saving || !form.name || !form.price ? 0.6 : 1 }}>
-          {saving ? '⏳ Saving...' : item ? '💾 Save Changes' : '➕ Add Item'}
+        <button onClick={save} disabled={saving || !form.name || !form.price} style={{ width: '100%', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '12px', borderRadius: 2, fontWeight: 800, fontSize: 12, letterSpacing: 2.5, fontFamily: '"Courier New", monospace', opacity: saving || !form.name || !form.price ? 0.45 : 1 }}>
+          {saving ? 'SAVING...' : item ? 'SAVE CHANGES' : 'ADD ITEM'}
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
+// ── Promo modal ───────────────────────────────────────────────────────────────
 function PromoModal({ onClose }) {
   const [form, setForm] = useState({ title: '', description: '', emoji: '🎉', active: true });
   const [saving, setSaving] = useState(false);
   const save = async () => { setSaving(true); await addDoc(collection(db, 'promotions'), form); setSaving(false); onClose(); };
-  const inp = { width: '100%', background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, fontSize: 14, outline: 'none' };
+  const fi = { width: '100%', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5ead0', padding: '11px 14px', borderRadius: 2, fontSize: 13, outline: 'none', fontFamily: '"Courier New", monospace', boxSizing: 'border-box', letterSpacing: 0.5 };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 440, padding: '24px 20px' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Add Promotion</h2>
-        <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Emoji</label><input style={{ ...inp, width: 80 }} value={form.emoji} onChange={e => setForm(p => ({ ...p, emoji: e.target.value }))} /></div>
-        <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Title</label><input style={inp} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. 20% Off All Wraps Today!" /></div>
-        <div style={{ marginBottom: 20 }}><label style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Description</label><input style={inp} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Use code WRAP20 at checkout" /></div>
-        <button onClick={save} disabled={!form.title} style={{ width: '100%', background: 'var(--brand)', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 700, fontSize: 16, opacity: !form.title ? 0.6 : 1 }}>
-          {saving ? '⏳ Saving...' : '🎉 Add Promotion'}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        style={{ background: 'rgba(4,2,0,0.98)', backdropFilter: 'blur(28px)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 3, width: '100%', maxWidth: 440, padding: '26px 24px', position: 'relative' }}
+      >
+        {[['top','left'],['top','right'],['bottom','left'],['bottom','right']].map(([v,h],i) => (
+          <div key={i} style={{ position: 'absolute', [v]: -1, [h]: -1, width: 14, height: 14, zIndex: 5, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 10, height: 1.5, background: '#f59e0b' }} />
+            <div style={{ position: 'absolute', [v]: 0, [h]: 0, width: 1.5, height: 10, background: '#f59e0b' }} />
+          </div>
+        ))}
+        <h2 style={{ fontSize: 14, fontWeight: 800, color: '#f5ead0', marginBottom: 22, fontFamily: '"Courier New", monospace', letterSpacing: 2 }}>▸ ADD PROMOTION</h2>
+        <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 9, color: 'rgba(245,158,11,0.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 7, fontFamily: '"Courier New", monospace' }}>EMOJI</label><input style={{ ...fi, width: 80 }} value={form.emoji} onChange={e => setForm(p => ({ ...p, emoji: e.target.value }))} /></div>
+        <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 9, color: 'rgba(245,158,11,0.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 7, fontFamily: '"Courier New", monospace' }}>TITLE</label><input style={fi} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. 20% Off All Wraps Today!" /></div>
+        <div style={{ marginBottom: 22 }}><label style={{ display: 'block', fontSize: 9, color: 'rgba(245,158,11,0.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 7, fontFamily: '"Courier New", monospace' }}>DESCRIPTION</label><input style={fi} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Use code WRAP20 at checkout" /></div>
+        <button onClick={save} disabled={!form.title} style={{ width: '100%', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0d0600', border: 'none', padding: '12px', borderRadius: 2, fontWeight: 800, fontSize: 12, letterSpacing: 2.5, fontFamily: '"Courier New", monospace', opacity: !form.title ? 0.45 : 1 }}>
+          {saving ? 'SAVING...' : 'ADD PROMOTION'}
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
-
-// Shop notifications hook - add this inside AdminDashboard component

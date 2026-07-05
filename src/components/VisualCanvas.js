@@ -11,12 +11,21 @@ export default function VisualCanvas() {
     const ctx = canvas.getContext('2d');
 
     let W, H, raf;
+    // Smoothed mouse offset — particle warp center steers toward cursor
+    let targetMX = 0, targetMY = 0, mx = 0, my = 0;
+
     const resize = () => {
       W = canvas.width  = canvas.offsetWidth;
       H = canvas.height = canvas.offsetHeight;
     };
     resize();
     window.addEventListener('resize', resize);
+
+    const handleMouse = (e) => {
+      targetMX = e.clientX / window.innerWidth  - 0.5;
+      targetMY = e.clientY / window.innerHeight - 0.5;
+    };
+    window.addEventListener('mousemove', handleMouse);
 
     // 3D star-field particles — each has an (x, y, z) in 3D space
     const pts = Array.from({ length: COUNT }, () => spawn());
@@ -28,7 +37,7 @@ export default function VisualCanvas() {
         z:  Math.random() * 1800 + 100,
         vz: -(0.4 + Math.random() * 1.2),
         r:  0.6 + Math.random() * 2.2,
-        hue: Math.random() > 0.72 ? 38 : (Math.random() > 0.5 ? 25 : 200), // amber / orange / blue-white
+        hue: Math.random() > 0.72 ? 38 : (Math.random() > 0.5 ? 25 : 200),
         sat: 60 + Math.random() * 40,
       };
     }
@@ -36,11 +45,18 @@ export default function VisualCanvas() {
     const FOV = 700;
 
     function project(p) {
+      // Warp center follows mouse — all particles stream from where you look
+      const cx = W / 2 + mx * W * 0.22;
+      const cy = H / 2 + my * H * 0.22;
       const s = FOV / (FOV + p.z);
-      return { sx: W / 2 + p.x * s, sy: H / 2 + p.y * s, s };
+      return { sx: cx + p.x * s, sy: cy + p.y * s, s };
     }
 
     function tick() {
+      // Ease mouse position toward target (lerp)
+      mx += (targetMX - mx) * 0.045;
+      my += (targetMY - my) * 0.045;
+
       ctx.clearRect(0, 0, W, H);
 
       for (const p of pts) {
@@ -92,6 +108,7 @@ export default function VisualCanvas() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouse);
     };
   }, []);
 
