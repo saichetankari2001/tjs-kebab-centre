@@ -283,8 +283,10 @@ export default function AdminAssistant({ tab = 0, todaysOrders = [], todaysReven
   const [thinking, setThinking]         = useState(false);
   const [speaking, setSpeaking]         = useState(false);
   const [response, setResponse]         = useState('');
+  const [micError, setMicError]         = useState('');
   const [hasGemini]                     = useState(() => !!process.env.REACT_APP_GEMINI_API_KEY);
   const recognitionRef                  = useRef(null);
+  const listeningRef                    = useRef(false);
   const prevTabRef                      = useRef(tab);
 
   const { mood, color, tip, label } = TAB_CONFIG[tab] ?? TAB_CONFIG[0];
@@ -315,27 +317,49 @@ export default function AdminAssistant({ tab = 0, todaysOrders = [], todaysReven
     return () => stopSpeaking();
   }, [tab, open, tip]);
 
-  // Press-to-talk handler
-  const startListening = useCallback(() => {
+  // Toggle listening on/off (click-to-start, click-to-stop)
+  const toggleListening = useCallback(() => {
+    if (listeningRef.current) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR) {
+      setMicError('Speech recognition not supported in this browser.');
+      return;
+    }
     stopSpeaking();
     setSpeaking(false);
+    setMicError('');
 
     const rec = new SR();
     rec.lang = 'en-AU';
     rec.interimResults = false;
     rec.maxAlternatives = 1;
+    rec.continuous = false;
     recognitionRef.current = rec;
 
-    rec.onstart = () => setListening(true);
-    rec.onend   = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onstart = () => { setListening(true); listeningRef.current = true; };
+    rec.onend   = () => { setListening(false); listeningRef.current = false; };
+
+    rec.onerror = (e) => {
+      setListening(false);
+      listeningRef.current = false;
+      if (e.error === 'not-allowed') {
+        setMicError('Mic blocked — allow microphone in Chrome settings.');
+      } else if (e.error === 'no-speech') {
+        setMicError('No speech detected. Try again.');
+      } else {
+        setMicError(`Mic error: ${e.error}`);
+      }
+    };
 
     rec.onresult = async (e) => {
       const transcript = e.results[0][0].transcript;
       setResponse(`"${transcript}"`);
       setThinking(true);
+      setMicError('');
 
       const answer = await askGemini(transcript, contextStr);
       setThinking(false);
@@ -346,13 +370,12 @@ export default function AdminAssistant({ tab = 0, todaysOrders = [], todaysReven
       speak(reply, () => setSpeaking(false));
     };
 
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      setMicError('Could not start mic. Check browser permissions.');
+    }
   }, [contextStr, tip]);
-
-  const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  }, []);
 
   const handleToggle = useCallback(() => {
     setOpen(prev => {
@@ -498,14 +521,10 @@ export default function AdminAssistant({ tab = 0, todaysOrders = [], todaysReven
               </div>
             </div>
 
-            {/* Press-to-talk */}
-            <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Talk button */}
+            <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
               <button
-                onMouseDown={startListening}
-                onMouseUp={stopListening}
-                onTouchStart={startListening}
-                onTouchEnd={stopListening}
-                onMouseLeave={stopListening}
+                onClick={toggleListening}
                 style={{
                   width: '100%', padding: '11px 0',
                   borderRadius: 9,
@@ -518,15 +537,24 @@ export default function AdminAssistant({ tab = 0, todaysOrders = [], todaysReven
                   fontFamily: '"Courier New", monospace',
                   letterSpacing: 1.2,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  boxShadow: listening ? `0 0 20px ${color}33` : 'none',
+                  boxShadow: listening ? `0 0 22px ${color}33` : 'none',
                   userSelect: 'none', WebkitUserSelect: 'none',
                 }}
               >
                 <span style={{ fontSize: 15 }}>{listening ? '🔴' : '🎤'}</span>
-                {listening ? 'LISTENING...' : 'HOLD TO TALK'}
+                {listening ? 'TAP TO STOP' : 'TAP TO TALK'}
               </button>
 
-              {!hasGemini && (
+              {micError && (
+                <div style={{
+                  fontSize: 10, color: '#f87171', textAlign: 'center',
+                  fontFamily: 'Inter, sans-serif', lineHeight: 1.5,
+                }}>
+                  {micError}
+                </div>
+              )}
+
+              {!hasGemini && !micError && (
                 <div style={{
                   fontSize: 9.5, color: '#383848', textAlign: 'center',
                   fontFamily: 'Inter, sans-serif', lineHeight: 1.5,

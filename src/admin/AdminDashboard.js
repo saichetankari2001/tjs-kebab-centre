@@ -7,7 +7,7 @@ import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
 import UnderwaterScene from '../components/UnderwaterScene';
-import AdminAssistant from '../components/AdminAssistant';
+
 
 const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
 
@@ -367,13 +367,6 @@ export default function AdminDashboard() {
       {/* Three.js underwater abyss scene */}
       <UnderwaterScene />
 
-      {/* AI assistant — floating widget + one-time login greeting */}
-      <AdminAssistant
-        tab={tab}
-        todaysOrders={todaysOrders}
-        todaysRevenue={todaysRevenue}
-        pendingCount={pendingCount}
-      />
 
       <Sidebar
         tab={tab} setTab={setTab}
