@@ -44,5 +44,11 @@ service cloud.firestore {
     match /staffSessions/{id} {
       allow read, write: if request.auth != null;
     }
+
+    // Add-ons (salads, sauces, extras) — public read so pickup app can fetch
+    match /addOns/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
   }
 }
