@@ -17,10 +17,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hide native cursor on desktop — custom cursor replaces it */
-@media (pointer: fine) {
-  *, *::before, *::after { cursor: none !important; }
-}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }

@@ -6,7 +6,7 @@ import QRCode from 'react-qr-code';
 import { auth, db } from '../firebase';
 import { SEED_MENU, SEED_DRINKS } from '../data/seedData';
 import StaffManagement from './staff/StaffManagement';
-import LavaScene from '../components/LavaScene';
+import UnderwaterScene from '../components/UnderwaterScene';
 import AdminAssistant from '../components/AdminAssistant';
 
 const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
@@ -194,25 +194,6 @@ const pageVariants = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2 } },
 };
 
-// ── Cursor spotlight ──────────────────────────────────────────────────────────
-function CursorSpotlight() {
-  const x = useMotionValue(-1000);
-  const y = useMotionValue(-1000);
-  const sx = useSpring(x, { stiffness: 120, damping: 28 });
-  const sy = useSpring(y, { stiffness: 120, damping: 28 });
-
-  useEffect(() => {
-    const move = (e) => { x.set(e.clientX); y.set(e.clientY); };
-    window.addEventListener('mousemove', move);
-    return () => window.removeEventListener('mousemove', move);
-  }, [x, y]);
-
-  const bg = useTransform([sx, sy], ([cx, cy]) =>
-    `radial-gradient(700px circle at ${cx}px ${cy}px, rgba(245,158,11,0.045) 0%, transparent 60%)`
-  );
-
-  return <motion.div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: bg }} />;
-}
 
 // ── Main dashboard ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
@@ -383,11 +364,8 @@ export default function AdminDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex' }}>
 
-      {/* Three.js lava scene */}
-      <LavaScene />
-
-      {/* Cursor-reactive spotlight */}
-      <CursorSpotlight />
+      {/* Three.js underwater abyss scene */}
+      <UnderwaterScene />
 
       {/* AI assistant — floating widget + one-time login greeting */}
       <AdminAssistant

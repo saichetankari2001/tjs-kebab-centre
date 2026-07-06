@@ -3,7 +3,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
 import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
-import CustomCursor from '../components/CustomCursor';
 
 export default function AdminApp() {
   const [user, setUser] = useState(null);
@@ -69,7 +68,6 @@ export default function AdminApp() {
           animation: holoshimmerAdmin 4s linear infinite;
         }
       `}</style>
-      <CustomCursor />
       {loading ? (
         <div style={{ minHeight: '100vh', background: '#060300', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
           <div style={{ width: 44, height: 44, border: '3px solid rgba(245,158,11,0.15)', borderTopColor: '#f59e0b', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
