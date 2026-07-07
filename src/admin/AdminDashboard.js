@@ -73,8 +73,14 @@ function HUDCard({ children, accent = '#f59e0b', style }) {
 }
 
 // ── HUD Sidebar ───────────────────────────────────────────────────────────────
-function Sidebar({ tab, setTab, onSignOut, menuItems, seeding, onSeed, onClean, onAssignTypes }) {
+function Sidebar({ tab, setTab, onSignOut, menuItems, seeding, onSeed, onClean, onAssignTypes, open, onClose, isMobile }) {
+  if (isMobile && !open) return null;
   return (
+    <>
+      {/* Mobile backdrop */}
+      {isMobile && (
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 199, background: 'rgba(0,0,0,0.6)' }} />
+      )}
     <div style={{
       position: 'fixed', left: 0, top: 0, bottom: 0, width: 240, zIndex: 200,
       background: 'rgba(3,2,0,0.97)',
@@ -185,6 +191,7 @@ function Sidebar({ tab, setTab, onSignOut, menuItems, seeding, onSeed, onClean, 
       {/* Bottom amber edge */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)' }} />
     </div>
+    </>
   );
 }
 
@@ -198,6 +205,8 @@ const pageVariants = {
 // ── Main dashboard ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const [tab, setTab]               = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [menuItems, setMenuItems]   = useState([]);
   const [orders, setOrders]         = useState([]);
   const [promotions, setPromotions] = useState([]);
@@ -369,14 +378,16 @@ export default function AdminDashboard() {
 
 
       <Sidebar
-        tab={tab} setTab={setTab}
+        tab={tab}
+        setTab={(t) => { setTab(t); if (isMobile) setSidebarOpen(false); }}
         onSignOut={() => signOut(auth)}
         menuItems={menuItems} seeding={seeding}
         onSeed={seedDatabase} onClean={cleanDuplicates} onAssignTypes={assignItemTypes}
+        open={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile}
       />
 
       {/* Main content */}
-      <div style={{ marginLeft: 240, flex: 1, position: 'relative', zIndex: 1 }}>
+      <div style={{ marginLeft: isMobile ? 0 : 240, flex: 1, position: 'relative', zIndex: 1 }}>
 
         {/* Sticky HUD header */}
         <div style={{
@@ -388,11 +399,18 @@ export default function AdminDashboard() {
           padding: '0 32px', height: 56,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          {/* Left: breadcrumb */}
+          {/* Left: hamburger (mobile) + breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(o => !o)} style={{
+                background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+                color: '#f59e0b', borderRadius: 4, padding: '6px 10px', fontSize: 16,
+                cursor: 'pointer', lineHeight: 1,
+              }}>☰</button>
+            )}
             <span style={{ fontSize: 16 }}>{NAV_ITEMS[tab]?.icon}</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#f5ead0', fontFamily: '"Courier New", monospace', letterSpacing: 2, textTransform: 'uppercase' }}>{NAV_ITEMS[tab]?.label}</span>
-            <span style={{ fontSize: 9, color: 'rgba(245,158,11,0.35)', fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>{'//'} TJ-KEBAB-CENTRE</span>
+            {!isMobile && <span style={{ fontSize: 9, color: 'rgba(245,158,11,0.35)', fontFamily: '"Courier New", monospace', letterSpacing: 1 }}>{'//'} TJ-KEBAB-CENTRE</span>}
           </div>
           {/* Right: live status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
