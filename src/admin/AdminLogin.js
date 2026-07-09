@@ -4,10 +4,10 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import TileGridScene from '../components/TileGridScene';
 
-export default function AdminLogin() {
+export default function AdminLogin({ notice }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
+  const [error, setError]       = useState(notice || '');
   const [loading, setLoading]   = useState(false);
   const [focused, setFocused]   = useState(null);
 

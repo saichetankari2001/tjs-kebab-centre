@@ -2,6 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
     // Menu items — public read, anyone can write (merchant tablet manages stock/prices)
     match /menuItems/{id} {
       allow read: if true;
@@ -35,9 +39,11 @@ service cloud.firestore {
       allow read, delete: if request.auth != null;
     }
 
-    // Staff roster — admin only (must be signed in)
+    // Staff roster — read: any signed-in user (staff portal looks up its own profile by email);
+    // write: admin custom claim only (roster management is an admin-dashboard action)
     match /staff/{id} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     // Staff sessions

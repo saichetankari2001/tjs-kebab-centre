@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
@@ -7,9 +7,27 @@ import AdminDashboard from './AdminDashboard';
 export default function AdminApp() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => { setUser(u); setLoading(false); });
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!u) { setUser(null); setLoading(false); return; }
+      try {
+        // Force-refresh so a claim granted after this session started is picked up immediately.
+        const { claims } = await u.getIdTokenResult(true);
+        if (claims.admin === true) {
+          setUser(u);
+        } else {
+          await signOut(auth);
+          setUser(null);
+          setNotice('This account is not authorized for admin access.');
+        }
+      } catch {
+        await signOut(auth);
+        setUser(null);
+      }
+      setLoading(false);
+    });
     return unsub;
   }, []);
 
@@ -73,7 +91,7 @@ export default function AdminApp() {
           <div style={{ width: 44, height: 44, border: '3px solid rgba(245,158,11,0.15)', borderTopColor: '#f59e0b', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
           <div style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)', fontFamily: 'Inter, sans-serif' }}>Authenticating</div>
         </div>
-      ) : user ? <AdminDashboard /> : <AdminLogin />}
+      ) : user ? <AdminDashboard /> : <AdminLogin notice={notice} />}
     </>
   );
 }

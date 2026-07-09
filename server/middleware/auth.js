@@ -10,6 +10,9 @@ async function verifyAdmin(req, res, next) {
 
   try {
     const decoded = await admin.auth().verifyIdToken(token);
+    if (decoded.admin !== true) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
     req.uid = decoded.uid;
     next();
   } catch {
