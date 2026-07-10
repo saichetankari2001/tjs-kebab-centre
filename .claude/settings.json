@@ -239,7 +239,8 @@
       "Read(//opt/homebrew/bin/**)",
       "Bash(find /usr /opt /Users/saichetankari -name \"claude\" -type f 2>/dev/null | head -5)",
       "Read(//usr/**)",
-      "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/node_modules/@anthropic-ai/claude-code-darwin-arm64/claude mcp *)"
+      "Bash(/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/node_modules/@anthropic-ai/claude-code-darwin-arm64/claude mcp *)",
+      "Bash(npx eas *)"
     ],
     "additionalDirectories": [
       "/Users/saichetankari/Downloads/tjs-pickup/src/hooks",
