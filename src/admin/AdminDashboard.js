@@ -9,7 +9,7 @@ import StaffManagement from './staff/StaffManagement';
 import UnderwaterScene from '../components/UnderwaterScene';
 
 
-const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
+const API_URL = process.env.REACT_APP_API_URL ?? 'https://tjs-kebab-centre-production.up.railway.app';
 
 const NAV_ITEMS = [
   { icon: '⚡', label: 'Overview',    idx: 0 },

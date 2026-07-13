@@ -124,7 +124,7 @@ export default function CheckoutPage() {
       }
 
       if (form.email.trim()) {
-        fetch(`${process.env.REACT_APP_API_URL ?? 'http://localhost:4000'}/api/notify/order-confirm`, {
+        fetch(`${process.env.REACT_APP_API_URL ?? 'https://tjs-kebab-centre-production.up.railway.app'}/api/notify/order-confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

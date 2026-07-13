@@ -27,7 +27,7 @@ export default function PromoSignupBanner() {
 
     try {
       // Try backend first; fall back to direct Firestore write
-      const apiUrl = process.env.REACT_APP_API_URL ?? 'http://localhost:4000';
+      const apiUrl = process.env.REACT_APP_API_URL ?? 'https://tjs-kebab-centre-production.up.railway.app';
       let saved = false;
       try {
         const res = await fetch(`${apiUrl}/api/subscribe`, {
