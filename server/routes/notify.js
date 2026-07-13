@@ -10,6 +10,7 @@ const router = Router();
 // Order confirmation — called from frontend after successful checkout
 router.post('/order-confirm', async (req, res) => {
   const { to, firstName, orderId, items, total, phone } = req.body;
+  console.log('[notify] order-confirm received:', { to, orderId, firstName });
 
   if (!to || !orderId) {
     return res.status(400).json({ error: 'Missing required fields: to, orderId' });
@@ -26,9 +27,10 @@ router.post('/order-confirm', async (req, res) => {
       total: total ?? 0,
     });
   } catch (err) {
-    console.error('Order confirm email failed:', err.message);
+    console.error('[notify] email failed:', err.message);
     results.email = { error: err.message };
   }
+  console.log('[notify] email result:', results.email?.messageId ?? results.email?.error ?? 'unknown');
 
   if (phone) {
     try {
