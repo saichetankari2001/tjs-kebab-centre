@@ -9,9 +9,7 @@ const notifyRouter    = require('./routes/notify');
 const app  = express();
 const PORT = process.env.PORT ?? 4000;
 
-const corsOptions = { origin: process.env.FRONTEND_URL ?? 'http://localhost:3000', optionsSuccessStatus: 200 };
-app.options('*', cors(corsOptions));
-app.use(cors(corsOptions));
+app.use(cors({ origin: true, optionsSuccessStatus: 200 }));
 app.use(express.json());
 
 app.use('/health',        healthRouter);
