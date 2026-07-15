@@ -1,22 +1,20 @@
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
-
 async function sendEmail({ to, subject, html }) {
-  return transporter.sendMail({
-    from: `"TJ's Kebab Centre" <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    html,
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: "TJ's Kebab Centre <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    }),
   });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? 'Resend error');
+  return data;
 }
 
 function orderConfirmHtml({ firstName, orderId, items, total }) {
