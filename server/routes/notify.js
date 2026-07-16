@@ -10,7 +10,8 @@ const router = Router();
 // Order confirmation — called from frontend after successful checkout
 router.post('/order-confirm', async (req, res) => {
   const { to, firstName, orderId, items, total, phone } = req.body;
-  console.log('[notify] order-confirm received:', { to, orderId, firstName });
+  const keyPreview = process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 12) + '...' : 'MISSING';
+  console.log('[notify] order-confirm received:', { to, orderId, firstName, keyPreview });
 
   if (!to || !orderId) {
     return res.status(400).json({ error: 'Missing required fields: to, orderId' });
