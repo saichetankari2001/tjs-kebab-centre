@@ -16,4 +16,8 @@ app.use('/health',        healthRouter);
 app.use('/api/subscribe', subscribeRouter);
 app.use('/api/notify',    notifyRouter);
 
-app.listen(PORT, () => console.log(`TJ's backend running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`TJ's backend running on port ${PORT}`);
+  console.log(`[startup] RESEND_API_KEY length: ${process.env.RESEND_API_KEY?.length ?? 'NOT SET'}`);
+  console.log(`[startup] RESEND_API_KEY prefix: ${process.env.RESEND_API_KEY?.slice(0, 8) ?? 'MISSING'}`);
+});
